@@ -1,17 +1,4 @@
 #!/home/michael/leo-workspace/py/bin/python
-"""
-robot_server.py — Real-time Robot Motor Control Server
-Serves a web control panel and handles live motor commands via WebSocket.
-
-── Setup (run once on the Pi) ──────────────────────────────────────────────────
-    pip3 install aiohttp adafruit-circuitpython-pca9685 adafruit-blinka
-
-── Run ─────────────────────────────────────────────────────────────────────────
-    python3 robot_server.py
-
-    Then open  http://<this-pi's-ip>:9300  in any browser on your network.
-    The page will auto-detect the Pi's address and connect automatically.
-"""
 
 import asyncio
 import json
@@ -147,18 +134,15 @@ def _dispatch(raw: str, peer: str, ws: web.WebSocketResponse) -> None:
         log.warning("Unknown command %r from %s", kind, peer)
 
 
-# ── HTTP: serve the control panel ────────────────────────────────────────────
-HTML_PATH = pathlib.Path(__file__).parent / "index.html"
-
-
 async def index(request: web.Request) -> web.Response:
-    return web.FileResponse(HTML_PATH)
+    return web.FileResponse(pathlib.Path(__file__).parent / "web/index.html")
 
 
 # ── App assembly ──────────────────────────────────────────────────────────────
 def build_app() -> web.Application:
     app = web.Application()
-    app.router.add_get("/",    index)
+    app.router.add_get("/", index)
+    app.router.add_static("/", pathlib.Path(__file__).parent / "web", name="static")
     app.router.add_get("/ws", ws_handler)
     return app
 

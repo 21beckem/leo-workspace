@@ -1,0 +1,537 @@
+/* ── Design tokens ───────────────────────────────────────────────── */
+:root {
+  --bg:          #09090c;
+  --surface:     #111118;
+  --surface2:    #1a1a24;
+  --border:      #252535;
+  --border-hi:   #353550;
+  --text:        #c4c4d4;
+  --text-dim:    #55556a;
+  --fwd:         #00e87a;
+  --fwd-dim:     rgba(0,232,122,0.12);
+  --rev:         #ff3b3b;
+  --rev-dim:     rgba(255,59,59,0.12);
+  --accent:      #5b6cff;
+  --stop-amber:  #f5a623;
+  --radius:      6px;
+}
+
+/* ── Light theme overrides ───────────────────────────────────────── */
+:root[data-theme="light"] {
+  --bg:          #f0f0f4;
+  --surface:     #ffffff;
+  --surface2:    #e8e8f0;
+  --border:      #ccccdc;
+  --border-hi:   #aaaacc;
+  --text:        #1a1a2e;
+  --text-dim:    #8888a4;
+  --fwd:         #00a050;
+  --fwd-dim:     rgba(0,160,80,0.10);
+  --rev:         #cc2020;
+  --rev-dim:     rgba(204,32,32,0.10);
+  --accent:      #4455ee;
+  --stop-amber:  #c47a00;
+}
+
+/* ── Reset & base ────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Courier New', Courier, monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  transition: background 0.2s, color 0.2s;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255,255,255,0.012) 2px,
+    rgba(255,255,255,0.012) 4px
+  );
+}
+:root[data-theme="light"] body {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.018) 3px,
+    rgba(0,0,0,0.018) 4px
+  );
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 0.18em;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.status-pip {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--rev);
+  box-shadow: 0 0 8px var(--rev);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.status-pip.connecting {
+  background: var(--stop-amber);
+  box-shadow: 0 0 8px var(--stop-amber);
+  animation: blink 0.9s ease-in-out infinite;
+}
+.status-pip.connected {
+  background: var(--fwd);
+  box-shadow: 0 0 8px var(--fwd);
+  animation: none;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+/* Emergency stop in header */
+.btn-theme {
+  background: none;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn-theme:hover { border-color: var(--accent); color: var(--text); }
+
+/* Power off button */
+.btn-poweroff {
+  background: none;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.btn-poweroff:hover  { border-color: var(--stop-amber); color: var(--stop-amber); }
+.btn-poweroff:active { opacity: 0.7; }
+
+.btn-emergency {
+  background: var(--rev);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: background 0.12s, transform 0.08s;
+  flex-shrink: 0;
+}
+.btn-emergency:hover  { background: #cc2020; }
+.btn-emergency:active { transform: scale(0.94); background: #aa1010; }
+
+/* ── Connection bar ──────────────────────────────────────────────── */
+.connect-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.field-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.field-group label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+}
+.field-group input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field-group input:focus { border-color: var(--accent); }
+#hostInput { width: 155px; }
+#portInput { width: 64px; }
+
+.btn-connect {
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 6px 16px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-connect:hover { border-color: var(--accent); color: var(--text); }
+.btn-connect.live  { border-color: var(--fwd); color: var(--fwd); }
+
+.status-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ── Motor grid ──────────────────────────────────────────────────── */
+.motor-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  padding: 18px;
+  flex: 1;
+  align-content: start;
+}
+
+@media (max-width: 640px) {
+  .motor-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px; }
+}
+@media (max-width: 340px) {
+  .motor-grid { grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; }
+}
+
+/* ── Motor card ──────────────────────────────────────────────────── */
+.motor-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Faint corner glow when active */
+.motor-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+.motor-card.fwd::before { background: var(--fwd-dim);  opacity: 1; }
+.motor-card.rev::before { background: var(--rev-dim);  opacity: 1; }
+.motor-card.fwd { border-color: rgba(0,232,122,0.25); box-shadow: 0 0 20px rgba(0,232,122,0.06); }
+.motor-card.rev { border-color: rgba(255,59,59,0.25);  box-shadow: 0 0 20px rgba(255,59,59,0.06); }
+
+.motor-tag {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  position: relative;
+  z-index: 1;
+}
+
+.motor-letter {
+  font-size: 30px;
+  font-weight: bold;
+  line-height: 1;
+  color: var(--text);
+  position: relative;
+  z-index: 1;
+  transition: color 0.2s;
+}
+.motor-card.fwd .motor-letter { color: var(--fwd); }
+.motor-card.rev .motor-letter { color: var(--rev); }
+
+/* ── Vertical bidirectional slider ───────────────────────────────── */
+.slider-zone {
+  position: relative;
+  width: 52px;
+  height: 188px;
+  cursor: ns-resize;
+  touch-action: none;         /* own the touch — don't pass to scroll */
+  user-select: none;
+  z-index: 1;
+}
+
+.slider-rail {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 100%;
+  background: var(--surface2);
+  border-radius: 3px;
+}
+
+/* tick marks at 25%, 50% (center), 75% */
+.slider-rail::before,
+.slider-rail::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+/* center divider */
+.slider-rail::after {
+  width: 20px;
+  height: 2px;
+  top: 50%;
+  margin-top: -1px;
+  background: var(--border-hi);
+}
+/* quarter marks */
+.slider-rail::before {
+  width: 12px;
+  height: 1px;
+  top: 25%;
+  background: var(--border);
+  box-shadow: 0 calc(50% + 1px) 0 var(--border);  /* mirror at 75% */
+}
+
+.slider-fill {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  border-radius: 3px;
+  pointer-events: none;
+  transition: none;
+}
+
+.slider-thumb {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  background: var(--surface);
+  border: 2px solid var(--border-hi);
+  border-radius: 50%;
+  pointer-events: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  /* grip lines */
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0, transparent 3px,
+    var(--border-hi) 3px, var(--border-hi) 4px
+  );
+  background-position: center;
+  background-size: 16px 8px;
+  background-repeat: no-repeat;
+}
+.slider-zone.dragging .slider-thumb {
+  border-color: var(--text);
+  box-shadow: 0 0 0 4px rgba(196,196,212,0.1);
+}
+.motor-card.fwd .slider-thumb { border-color: var(--fwd); }
+.motor-card.rev .slider-thumb { border-color: var(--rev); }
+
+/* ── Readout & stop button ───────────────────────────────────────── */
+.motor-readout {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  color: var(--text-dim);
+  min-height: 15px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.motor-card.fwd .motor-readout { color: var(--fwd); }
+.motor-card.rev .motor-readout { color: var(--rev); }
+
+.btn-motor-stop {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  padding: 5px 0;
+  width: 100%;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  position: relative;
+  z-index: 1;
+}
+.btn-motor-stop:hover {
+  border-color: var(--stop-amber);
+  color: var(--stop-amber);
+}
+.btn-motor-stop:active { opacity: 0.7; }
+
+/* ── Slider-type toggle ──────────────────────────────────────────── */
+.type-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  position: relative;
+  z-index: 1;
+}
+.type-toggle button {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+.type-toggle button.sel {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* ── Speed + direction controls (second mode) ────────────────────── */
+.speed-dir-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+/* Direction toggle */
+.dir-toggle {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.dir-toggle button {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  padding: 5px 0;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.dir-toggle button:first-child { border-right: 1px solid var(--border); }
+.dir-toggle button.active-fwd { background: rgba(0,232,122,0.15); color: var(--fwd); }
+.dir-toggle button.active-rev { background: rgba(255,59,59,0.15);  color: var(--rev); }
+
+/* Speed-only unidirectional slider (horizontal) */
+.speed-slider-wrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.speed-slider-wrap input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface2);
+  outline: none;
+  cursor: pointer;
+}
+.speed-slider-wrap input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--border-hi);
+  cursor: pointer;
+}
+.speed-slider-wrap input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--border-hi);
+  cursor: pointer;
+}
+.btn-momentary {
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.btn-momentary:hover { border-color: var(--stop-amber); color: var(--stop-amber); }
+.btn-momentary.on {
+  border-color: var(--stop-amber);
+  color: var(--stop-amber);
+  background: rgba(245,166,35,0.08);
+}
+
+.speed-pct {
+  font-size: 11px;
+  color: var(--text-dim);
+  min-width: 36px;
+  text-align: right;
+}
