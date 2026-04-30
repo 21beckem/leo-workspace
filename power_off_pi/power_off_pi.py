@@ -1,3 +1,5 @@
+#!/home/michael/leo-workspace/py/bin/python
+
 def power_off_pi():
     """Power off the Raspberry Pi."""
     import os

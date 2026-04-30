@@ -14,7 +14,10 @@ Yay Leo!
         ```bash
         username ALL=(ALL) NOPASSWD: /home/michael/leo-workspace/power_off_pi/power_off.sh
         ```
-
+5. Install needed pip libs:
+```bash
+pip3 install aiohttp adafruit-circuitpython-pca9685 adafruit-blinka
+```
 
 ## Connection
 
