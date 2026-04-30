@@ -21,7 +21,6 @@ const portInput   = document.getElementById('portInput');
 const stopAllBtn  = document.getElementById('stopAllBtn');
 const poweroffBtn = document.getElementById('poweroffBtn');
 const themeBtn    = document.getElementById('themeBtn');
-const momentaryBtn = document.getElementById('momentaryBtn');
 
 // ── Theme ──────────────────────────────────────────────────────────
 let darkMode = localStorage.getItem('robot_theme') !== 'light';
@@ -47,23 +46,6 @@ poweroffBtn.addEventListener('click', () => {
     sendMsg({ type: 'stop_all' });
     sendMsg({ type: 'poweroff' });
     setConnectionState('', 'Shutting down…');
-  }
-});
-
-let momentary = localStorage.getItem('robot_momentary') === 'true';
-
-function applyMomentary() {
-  momentaryBtn.textContent = `MOMENTARY: ${momentary ? 'ON' : 'OFF'}`;
-  momentaryBtn.classList.toggle('on', momentary);
-}
-
-momentaryBtn.addEventListener('click', () => {
-  momentary = !momentary;
-  localStorage.setItem('robot_momentary', momentary);
-  applyMomentary();
-  if (momentary) {
-    sendMsg({ type: 'stop_all' });
-    sliders.forEach(s => s.resetVisual());
   }
 });
 
@@ -140,18 +122,14 @@ stopAllBtn.addEventListener('click', () => {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  MotorCard — manages one motor's DOM + two control modes
+//  MotorCard — manages one motor's DOM
 // ─────────────────────────────────────────────────────────────────────────────
 class MotorCard {
   constructor(name) {
     this.name     = name;
     this.value    = 0;       // -1 … 1 (negative = reverse)
-    this.mode     = 'bidir'; // 'bidir' | 'split'
     this._lastSentAt = 0;
-
-    // split-mode state
-    this._splitDir   = 1;    // 1 = forward, -1 = reverse
-    this._splitSpeed = 0;    // 0 … 1
+    this._speed = 0;    // 0 … 1
 
     this.el = this._buildDOM();
     this._updateVisuals();
@@ -165,28 +143,11 @@ class MotorCard {
       <div class="motor-tag">MOTOR</div>
       <div class="motor-letter">${this.name}</div>
 
-      <div class="type-toggle">
-        <button data-mode="bidir" class="sel">BIDIR</button>
-        <button data-mode="split">SPLIT</button>
-      </div>
-
       <!-- Bidirectional vertical slider -->
       <div class="slider-zone" id="sz-${this.name}" style="display:flex;flex-direction:column;align-items:center;">
         <div class="slider-rail" id="rail-${this.name}">
           <div class="slider-fill" id="fill-${this.name}"></div>
           <div class="slider-thumb" id="thumb-${this.name}"></div>
-        </div>
-      </div>
-
-      <!-- Split: direction + speed slider -->
-      <div class="speed-dir-wrap" id="sdw-${this.name}" style="display:none;">
-        <div class="dir-toggle">
-          <button data-dir="1"  class="active-fwd">FWD</button>
-          <button data-dir="-1"                   >REV</button>
-        </div>
-        <div class="speed-slider-wrap">
-          <input type="range" min="0" max="100" value="0" id="spd-${this.name}" />
-          <span class="speed-pct" id="spct-${this.name}">0%</span>
         </div>
       </div>
 
@@ -201,40 +162,8 @@ class MotorCard {
     this._fill   = card.querySelector(`#fill-${this.name}`);
     this._thumb  = card.querySelector(`#thumb-${this.name}`);
     this._sdw    = card.querySelector(`#sdw-${this.name}`);
-    this._spdIn  = card.querySelector(`#spd-${this.name}`);
     this._spct   = card.querySelector(`#spct-${this.name}`);
     this._ro     = card.querySelector(`#ro-${this.name}`);
-
-    // Mode toggle
-    card.querySelectorAll('.type-toggle button').forEach(btn => {
-      btn.addEventListener('click', () => this._setMode(btn.dataset.mode));
-    });
-
-    // Direction buttons (split mode)
-    card.querySelectorAll('.dir-toggle button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this._splitDir = parseInt(btn.dataset.dir);
-        this._syncSplitDirUI();
-        this._commitSplit();
-      });
-    });
-
-    // Speed slider (split mode)
-    this._spdIn.addEventListener('input', () => {
-      this._splitSpeed = parseInt(this._spdIn.value) / 100;
-      this._spct.textContent = `${this._spdIn.value}%`;
-      this._commitSplit();
-    });
-
-    this._spdIn.addEventListener('pointerup', () => {
-      if (momentary) {
-        this._splitSpeed = 0;
-        this._spdIn.value = 0;
-        this._spct.textContent = '0%';
-        this.setValue(0, false);
-        this._forceSend();
-      }
-    });
 
     // Per-motor stop button
     card.querySelector(`#mstop-${this.name}`).addEventListener('click', e => {
@@ -243,45 +172,9 @@ class MotorCard {
       this._forceSend();
     });
 
-    // Bidirectional slider drag
     this._attachBidirEvents();
 
     return card;
-  }
-
-  // ── Mode switching ───────────────────────────────────────────────
-  _setMode(mode) {
-    this.mode = mode;
-    this._card.querySelectorAll('.type-toggle button').forEach(b => {
-      b.classList.toggle('sel', b.dataset.mode === mode);
-    });
-    const bidir = mode === 'bidir';
-    this._sz.style.display  = bidir ? 'flex' : 'none';
-    this._sdw.style.display = bidir ? 'none' : 'flex';
-
-    // Carry value across modes
-    if (mode === 'split') {
-      this._splitDir   = this.value >= 0 ? 1 : -1;
-      this._splitSpeed = Math.abs(this.value);
-      this._spdIn.value = Math.round(this._splitSpeed * 100);
-      this._spct.textContent = `${this._spdIn.value}%`;
-      this._syncSplitDirUI();
-    } else {
-      // bidir ← take split state
-      this.setValue(this._splitDir * this._splitSpeed, false);
-    }
-  }
-
-  _syncSplitDirUI() {
-    this._card.querySelectorAll('.dir-toggle button').forEach(b => {
-      const d = parseInt(b.dataset.dir);
-      b.classList.remove('active-fwd', 'active-rev');
-      if (d === this._splitDir) b.classList.add(d > 0 ? 'active-fwd' : 'active-rev');
-    });
-  }
-
-  _commitSplit() {
-    this.setValue(this._splitDir * this._splitSpeed);
   }
 
   // ── Bidirectional slider pointer events ──────────────────────────
@@ -315,12 +208,8 @@ class MotorCard {
       if (!dragging) return;
       dragging = false;
       zone.classList.remove('dragging');
-      if (momentary) {
-        this.setValue(0, false);
-        this._forceSend();
-      } else {
-        this._forceSend(); // guarantee final value is sent
-      }
+      this.setValue(0, false);
+      this._forceSend();
     };
 
     zone.addEventListener('pointerup',     endDrag);
@@ -339,8 +228,7 @@ class MotorCard {
   resetVisual() {
     // Server stopped the motors; just sync the UI without re-sending
     this.value = 0;
-    this._splitSpeed = 0;
-    this._spdIn.value = 0;
+    this._speed = 0;
     this._spct.textContent = '0%';
     this._updateVisuals();
   }
@@ -422,5 +310,3 @@ if (savedHost) {
 if (hostInput.value) {
   connect();
 }
-
-applyMomentary();
