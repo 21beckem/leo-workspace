@@ -63,6 +63,12 @@ body {
   );
 }
 
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 /* ── Header ──────────────────────────────────────────────────────── */
 header {
   display: flex;
@@ -410,108 +416,3 @@ header {
   color: var(--stop-amber);
 }
 .btn-motor-stop:active { opacity: 0.7; }
-
-/* ── Slider-type toggle ──────────────────────────────────────────── */
-.type-toggle {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
-  position: relative;
-  z-index: 1;
-}
-.type-toggle button {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  font-family: inherit;
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: border-color 0.12s, color 0.12s;
-}
-.type-toggle button.sel {
-  border-color: var(--accent);
-  color: var(--text);
-}
-
-/* ── Speed + direction controls (second mode) ────────────────────── */
-.speed-dir-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  position: relative;
-  z-index: 1;
-}
-
-/* Direction toggle */
-.dir-toggle {
-  display: flex;
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.dir-toggle button {
-  flex: 1;
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: bold;
-  letter-spacing: 0.1em;
-  padding: 5px 0;
-  cursor: pointer;
-  transition: background 0.12s, color 0.12s;
-}
-.dir-toggle button:first-child { border-right: 1px solid var(--border); }
-.dir-toggle button.active-fwd { background: rgba(0,232,122,0.15); color: var(--fwd); }
-.dir-toggle button.active-rev { background: rgba(255,59,59,0.15);  color: var(--rev); }
-
-/* Speed-only unidirectional slider (horizontal) */
-.speed-slider-wrap {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.speed-slider-wrap input[type="range"] {
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--surface2);
-  outline: none;
-  cursor: pointer;
-}
-.speed-slider-wrap input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--surface2);
-  border: 2px solid var(--border-hi);
-  cursor: pointer;
-}
-.speed-slider-wrap input[type="range"]::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--surface2);
-  border: 2px solid var(--border-hi);
-  cursor: pointer;
-}
-
-.speed-pct {
-  font-size: 11px;
-  color: var(--text-dim);
-  min-width: 36px;
-  text-align: right;
-}
