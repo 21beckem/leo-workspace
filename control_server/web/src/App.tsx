@@ -1,4 +1,4 @@
-import { Component, createEffect, onCleanup } from 'solid-js';
+import { Component, createEffect, createSignal, onCleanup, Show } from 'solid-js';
 import {
   createMotorStore,
   createConnectionStore,
@@ -9,6 +9,7 @@ import { WebSocketService } from './websocket.service';
 import { Header } from './components/Header';
 import { ConnectionBar } from './components/ConnectionBar';
 import { MotorGrid } from './components/MotorGrid';
+import { JointGrid } from './components/JointGrid';
 import './styles.css';
 
 const App: Component = () => {
@@ -88,6 +89,8 @@ const App: Component = () => {
     wsService.disconnect();
   });
 
+  const [controlMode, setControlMode] = createSignal<'motors' | 'joints'>('motors');
+
   return (
     <>
       <Header
@@ -107,12 +110,23 @@ const App: Component = () => {
         statusLabel={() => connectionStore.connection.statusLabel}
         onConnect={handleConnect}
         onDisconnect={handleDisconnect}
+        onModeChange={(mode) => setControlMode(mode)}
+        getCurrentMode={() => controlMode()}
       />
-      <MotorGrid
-        motors={() => motorStore.motors}
-        onMotorChange={handleMotorChange}
-        onMotorStop={handleMotorStop}
-      />
+      <Show when={connectionStore.connection.isConnected && controlMode() === 'motors'}>
+        <MotorGrid
+          motors={() => motorStore.motors}
+          onMotorChange={handleMotorChange}
+          onMotorStop={handleMotorStop}
+        />
+      </Show>
+      <Show when={connectionStore.connection.isConnected && controlMode() === 'joints'}>
+        <JointGrid
+          motors={() => motorStore.motors}
+          onMotorChange={handleMotorChange}
+          onMotorStop={handleMotorStop}
+        />
+      </Show>
     </>
   );
 };

@@ -2,6 +2,55 @@ import { createStore } from 'solid-js/store';
 import { createSignal } from 'solid-js';
 
 export const MOTOR_NAMES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
+export enum JointType {
+  ADDITIVE = 'additive',
+  DIFFERENCE = 'difference',
+}
+export const ROBOT_JOINTS = [
+  {
+    name: 'Left Ankle',
+    motors: ['A', 'B'],
+    type: JointType.DIFFERENCE,
+  },
+  {
+    name: 'Left Lower',
+    motors: ['A', 'B'],
+    type: JointType.ADDITIVE,
+  },
+  
+  {
+    name: 'Left Upper',
+    motors: ['C', 'D'],
+    type: JointType.ADDITIVE,
+  },
+  {
+    name: 'Left Hip',
+    motors: ['C', 'D'],
+    type: JointType.DIFFERENCE,
+  },
+  
+  {
+    name: 'Right Ankle',
+    motors: ['E', 'F'],
+    type: JointType.DIFFERENCE,
+  },
+  {
+    name: 'Right Lower',
+    motors: ['E', 'F'],
+    type: JointType.ADDITIVE,
+  },
+  
+  {
+    name: 'Right Upper',
+    motors: ['G', 'H'],
+    type: JointType.ADDITIVE,
+  },
+  {
+    name: 'Right Hip',
+    motors: ['G', 'H'],
+    type: JointType.DIFFERENCE,
+  }
+]
 export type MotorName = typeof MOTOR_NAMES[number];
 export type ConnectionState = '' | 'connecting' | 'connected';
 

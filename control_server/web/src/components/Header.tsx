@@ -24,7 +24,7 @@ export const Header: Component<HeaderProps> = (props) => {
           {props.themeLabel()}
         </button>
         <button
-          class="btn-poweroff"
+          class="btn"
           onClick={props.onPowerOff}
           title="Safely power off the Raspberry Pi"
         >
