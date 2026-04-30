@@ -11,7 +11,7 @@ import subprocess
 import board
 import busio
 import adafruit_pca9685
-from aiohttp import web, WSMsgType
+from aiohttp import web, WSMsgType, ClientSession
 import sys
 sys.path.append('/home/michael/leo-workspace/power_off_pi')
 from power_off_pi import power_off_pi
@@ -134,15 +134,32 @@ def _dispatch(raw: str, peer: str, ws: web.WebSocketResponse) -> None:
         log.warning("Unknown command %r from %s", kind, peer)
 
 
-async def index(request: web.Request) -> web.Response:
-    return web.FileResponse(pathlib.Path(__file__).parent / "web/index.html")
-
-
 # ── App assembly ──────────────────────────────────────────────────────────────
+
+async def proxy_handler(request):
+    async with ClientSession() as session:
+        # If the incoming path starts with "/leo-workspace", strip that prefix
+        path_qs = request.path_qs
+        prefix = "/leo-workspace"
+        if path_qs.startswith(prefix):
+            path_qs = path_qs[len(prefix):]
+            if path_qs == "":
+                path_qs = "/"
+
+        target_url = f"https://21beckem.github.io/leo-workspace{path_qs}"
+
+        # Forward the request to the target server
+        async with session.get(target_url) as resp:
+            data = await resp.read()
+            return web.Response(
+                text=data.decode("utf-8", errors="replace"),
+                status=resp.status,
+                content_type=resp.content_type,
+            )
+
 def build_app() -> web.Application:
     app = web.Application()
-    app.router.add_get("/", index)
-    app.router.add_static("/", pathlib.Path(__file__).parent / "web", name="static")
+    app.router.add_get("/{path:.*}", proxy_handler)
     app.router.add_get("/ws", ws_handler)
     return app
 
@@ -161,6 +178,7 @@ if __name__ == "__main__":
     log.info("━" * 54)
     log.info("  Robot control server is running!")
     log.info("  Open in any browser →  http://%s:9300", lan_ip)
+    log.info("  Or →  https://21beckem.github.io/leo-workspace/")
     log.info("━" * 54)
 
     web.run_app(build_app(), host="0.0.0.0", port=9300, access_log=None)
