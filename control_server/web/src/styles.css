@@ -253,7 +253,7 @@ header {
 }
 
 /* ── Motor card ──────────────────────────────────────────────────── */
-.motor-card {
+.control-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -268,7 +268,7 @@ header {
 }
 
 /* Faint corner glow when active */
-.motor-card::before {
+.control-card::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -277,12 +277,12 @@ header {
   transition: opacity 0.25s;
   pointer-events: none;
 }
-.motor-card.fwd::before { background: var(--fwd-dim);  opacity: 1; }
-.motor-card.rev::before { background: var(--rev-dim);  opacity: 1; }
-.motor-card.fwd { border-color: rgba(0,232,122,0.25); box-shadow: 0 0 20px rgba(0,232,122,0.06); }
-.motor-card.rev { border-color: rgba(255,59,59,0.25);  box-shadow: 0 0 20px rgba(255,59,59,0.06); }
+.control-card.fwd::before { background: var(--fwd-dim);  opacity: 1; }
+.control-card.rev::before { background: var(--rev-dim);  opacity: 1; }
+.control-card.fwd { border-color: rgba(0,232,122,0.25); box-shadow: 0 0 20px rgba(0,232,122,0.06); }
+.control-card.rev { border-color: rgba(255,59,59,0.25);  box-shadow: 0 0 20px rgba(255,59,59,0.06); }
 
-.motor-tag {
+.control-tag {
   font-size: 10px;
   letter-spacing: 0.2em;
   color: var(--text-dim);
@@ -290,7 +290,7 @@ header {
   z-index: 1;
 }
 
-.motor-letter {
+.control-label {
   font-size: 30px;
   font-weight: bold;
   line-height: 1;
@@ -299,8 +299,8 @@ header {
   z-index: 1;
   transition: color 0.2s;
 }
-.motor-card.fwd .motor-letter { color: var(--fwd); }
-.motor-card.rev .motor-letter { color: var(--rev); }
+.control-card.fwd .control-label { color: var(--fwd); }
+.control-card.rev .control-label { color: var(--rev); }
 
 /* ── Vertical bidirectional slider ───────────────────────────────── */
 .slider-zone {
@@ -384,11 +384,11 @@ header {
   border-color: var(--text);
   box-shadow: 0 0 0 4px rgba(196,196,212,0.1);
 }
-.motor-card.fwd .slider-thumb { border-color: var(--fwd); }
-.motor-card.rev .slider-thumb { border-color: var(--rev); }
+.control-card.fwd .slider-thumb { border-color: var(--fwd); }
+.control-card.rev .slider-thumb { border-color: var(--rev); }
 
 /* ── Readout & stop button ───────────────────────────────────────── */
-.motor-readout {
+.control-readout {
   font-size: 11px;
   letter-spacing: 0.09em;
   color: var(--text-dim);
@@ -397,10 +397,10 @@ header {
   position: relative;
   z-index: 1;
 }
-.motor-card.fwd .motor-readout { color: var(--fwd); }
-.motor-card.rev .motor-readout { color: var(--rev); }
+.control-card.fwd .control-readout { color: var(--fwd); }
+.control-card.rev .control-readout { color: var(--rev); }
 
-.btn-motor-stop {
+.btn-control-stop {
   background: none;
   border: 1px solid var(--border);
   color: var(--text-dim);
@@ -416,8 +416,8 @@ header {
   position: relative;
   z-index: 1;
 }
-.btn-motor-stop:hover {
+.btn-control-stop:hover {
   border-color: var(--stop-amber);
   color: var(--stop-amber);
 }
-.btn-motor-stop:active { opacity: 0.7; }
+.btn-control-stop:active { opacity: 0.7; }

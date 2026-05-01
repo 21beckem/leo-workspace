@@ -1,57 +1,68 @@
 import { createStore } from 'solid-js/store';
 import { createSignal } from 'solid-js';
+import { WebSocketService } from './websocket.service';
 
 export const MOTOR_NAMES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
 export enum JointType {
   ADDITIVE = 'additive',
   DIFFERENCE = 'difference',
 }
-export const ROBOT_JOINTS = [
+export const JOINT_NAMES = ['L Ankle', 'L Lower', 'L Upper', 'L Hip', 'R Ankle', 'R Lower', 'R Upper', 'R Hip'] as const;
+export const ROBOT_JOINTS: [Joint, Joint, Joint, Joint, Joint, Joint, Joint, Joint] = [
   {
-    name: 'Left Ankle',
+    name: 'L Ankle',
     motors: ['A', 'B'],
     type: JointType.DIFFERENCE,
+    value: 0
   },
   {
-    name: 'Left Lower',
+    name: 'L Lower',
     motors: ['A', 'B'],
     type: JointType.ADDITIVE,
+    value: 0
   },
   
   {
-    name: 'Left Upper',
+    name: 'L Upper',
     motors: ['C', 'D'],
     type: JointType.ADDITIVE,
+    value: 0
   },
   {
-    name: 'Left Hip',
+    name: 'L Hip',
     motors: ['C', 'D'],
     type: JointType.DIFFERENCE,
+    value: 0
   },
   
   {
-    name: 'Right Ankle',
+    name: 'R Ankle',
     motors: ['E', 'F'],
     type: JointType.DIFFERENCE,
+    value: 0
   },
   {
-    name: 'Right Lower',
+    name: 'R Lower',
     motors: ['E', 'F'],
     type: JointType.ADDITIVE,
+    value: 0
   },
   
   {
-    name: 'Right Upper',
+    name: 'R Upper',
     motors: ['G', 'H'],
     type: JointType.ADDITIVE,
+    value: 0
   },
   {
-    name: 'Right Hip',
+    name: 'R Hip',
     motors: ['G', 'H'],
     type: JointType.DIFFERENCE,
+    value: 0
   }
 ]
 export type MotorName = typeof MOTOR_NAMES[number];
+export type JointName = typeof JOINT_NAMES[number];
 export type ConnectionState = '' | 'connecting' | 'connected';
 
 // Motor store: fine-grained reactive motor state
@@ -59,26 +70,25 @@ export interface Motor {
   name: MotorName;
   value: number; // -1 to 1
 }
+export interface Joint {
+  name: JointName;
+  motors: [MotorName, MotorName];
+  type: JointType;
+  value: number; // -1 to 1
+}
 
-export const createMotorStore = () => {
-  const [motors, setMotors] = createStore<Record<MotorName, Motor>>(
-    MOTOR_NAMES.reduce((acc, name) => {
-      acc[name] = { name, value: 0 };
-      return acc;
-    }, {} as Record<MotorName, Motor>)
-  );
-
+export const createMotionControlStore = (wsService: WebSocketService) => {
   return {
-    motors,
     setMotorValue: (name: MotorName, value: number) => {
-      setMotors(name, 'value', Math.max(-1, Math.min(1, value)));
+      wsService.sendMotor(name, value, true);
+    },
+    stopMotor: (name: MotorName) => {
+      wsService.sendMotor(name, 0, false);
     },
     resetAllMotors: () => {
-      MOTOR_NAMES.forEach(name => {
-        setMotors(name, 'value', 0);
-      });
-    },
-  };
+      wsService.sendStopAll();
+    }
+  }
 };
 
 // Connection store

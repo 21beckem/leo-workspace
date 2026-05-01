@@ -1,24 +1,46 @@
-import { Component, createEffect, createSignal, onCleanup, Show } from 'solid-js';
+import { Component, createEffect, onCleanup, Show } from 'solid-js';
+import { Dynamic } from "solid-js/web";
 import {
-  createMotorStore,
   createConnectionStore,
   createThemeStore,
-  MotorName,
+  createMotionControlStore
 } from './stores';
 import { WebSocketService } from './websocket.service';
 import { Header } from './components/Header';
 import { ConnectionBar } from './components/ConnectionBar';
-import { MotorGrid } from './components/MotorGrid';
-import { JointGrid } from './components/JointGrid';
+import { MotorControlTab } from './tabs/MotorControlTab';
+import { JointControlTab } from './tabs/JointControlTab';
+import { TabsBar, initTabs } from './components/TabsBar';
 import './styles.css';
 
+
+export interface WindowTab {
+  key: string;
+  name: string;
+  Renderer: Component<any>;
+}
+export const WINDOW_TABS: WindowTab[] = [
+  {
+    key: 'motor',
+    name: 'Motor Control',
+    Renderer: MotorControlTab
+  },
+  {
+    key: 'joint',
+    name: 'Joint Control',
+    Renderer: JointControlTab
+  }
+];
+
+
 const App: Component = () => {
+  // initialize tabs
+  const [currentTab, setCurrentTab] = initTabs();
+
   // Initialize stores
-  const motorStore = createMotorStore();
   const connectionStore = createConnectionStore();
   const themeStore = createThemeStore();
 
-  // Initialize WebSocket service
   const wsService = new WebSocketService({
     onStateChange: (state) => {
       connectionStore.setState(state);
@@ -30,18 +52,7 @@ const App: Component = () => {
       console.error('WS Error:', message);
     },
   });
-
-  // Handle motor value changes
-  const handleMotorChange = (motor: MotorName, value: number, live = true) => {
-    motorStore.setMotorValue(motor, value);
-    wsService.sendMotor(motor, value, live);
-  };
-
-  // Handle motor stop
-  const handleMotorStop = (motor: MotorName) => {
-    motorStore.setMotorValue(motor, 0);
-    wsService.sendMotor(motor, 0, false);
-  };
+  const motionControl = createMotionControlStore(wsService);
 
   // Handle power off with confirmation
   const handlePowerOff = () => {
@@ -57,14 +68,9 @@ const App: Component = () => {
     if (confirmed) {
       wsService.sendStopAll();
       wsService.sendPowerOff();
+      wsService.disconnect();
       connectionStore.setStatusLabel('Shutting down…');
     }
-  };
-
-  // Handle stop all
-  const handleStopAll = () => {
-    motorStore.resetAllMotors();
-    wsService.sendStopAll();
   };
 
   // Handle connection
@@ -73,7 +79,7 @@ const App: Component = () => {
   };
 
   const handleDisconnect = () => {
-    motorStore.resetAllMotors();
+    motionControl.resetAllMotors();
     wsService.disconnect();
   };
 
@@ -89,8 +95,6 @@ const App: Component = () => {
     wsService.disconnect();
   });
 
-  const [controlMode, setControlMode] = createSignal<'motors' | 'joints'>('motors');
-
   return (
     <>
       <Header
@@ -99,7 +103,7 @@ const App: Component = () => {
         onToggleTheme={() => themeStore.toggleTheme()}
         themeLabel={() => themeStore.getThemeLabel()}
         onPowerOff={handlePowerOff}
-        onStopAll={handleStopAll}
+        motionControl={motionControl}
       />
       <ConnectionBar
         host={() => connectionStore.connection.host}
@@ -110,21 +114,17 @@ const App: Component = () => {
         statusLabel={() => connectionStore.connection.statusLabel}
         onConnect={handleConnect}
         onDisconnect={handleDisconnect}
-        onModeChange={(mode) => setControlMode(mode)}
-        getCurrentMode={() => controlMode()}
       />
-      <Show when={connectionStore.connection.isConnected && controlMode() === 'motors'}>
-        <MotorGrid
-          motors={() => motorStore.motors}
-          onMotorChange={handleMotorChange}
-          onMotorStop={handleMotorStop}
-        />
-      </Show>
-      <Show when={connectionStore.connection.isConnected && controlMode() === 'joints'}>
-        <JointGrid
-          motors={() => motorStore.motors}
-          onMotorChange={handleMotorChange}
-          onMotorStop={handleMotorStop}
+      <TabsBar
+        tabs={WINDOW_TABS}
+        onTabChange={(tabKey) => setCurrentTab(tabKey)}
+        getCurrentTab={currentTab}
+      />
+      <Show when={connectionStore.connection.isConnected}>
+        <Dynamic component={
+            WINDOW_TABS.find(tab => tab.key === currentTab())?.Renderer || (() => <div>Invalid tab</div>)
+          }
+          motionControl={motionControl}
         />
       </Show>
     </>

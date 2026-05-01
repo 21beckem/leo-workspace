@@ -1,5 +1,5 @@
-import { Component, Accessor } from 'solid-js';
-import { ConnectionState } from '../stores';
+import { Component, Accessor, createSignal } from 'solid-js';
+import { ConnectionState, createMotionControlStore } from '../stores';
 
 interface HeaderProps {
   connectionState: Accessor<ConnectionState>;
@@ -7,11 +7,34 @@ interface HeaderProps {
   onToggleTheme: () => void;
   themeLabel: Accessor<string>;
   onPowerOff: () => void;
-  onStopAll: () => void;
+  motionControl: ReturnType<typeof createMotionControlStore>;
 }
+
+const MenuBtns: Component<HeaderProps> = (props) => {
+  return (
+    <>
+      <button class="btn-theme" onClick={props.onToggleTheme}>
+        {props.themeLabel()}
+      </button>
+      <button
+        class="btn"
+        onClick={props.onPowerOff}
+        title="Safely power off the Raspberry Pi"
+      >
+        ⏻ POWER OFF
+      </button>
+      <button class="btn-emergency" onClick={() => props.motionControl.resetAllMotors()}>
+        ■ STOP ALL
+      </button>
+    </>
+  );
+};
 
 export const Header: Component<HeaderProps> = (props) => {
   const getStatusClass = () => props.connectionState();
+  const [mobileOpen, setMobileOpen] = createSignal(false);
+
+  const toggleMobile = () => setMobileOpen((v) => !v);
 
   return (
     <header>
@@ -19,21 +42,33 @@ export const Header: Component<HeaderProps> = (props) => {
         <span class={`status-pip ${getStatusClass()}`}></span>
         CONTROL PANEL
       </div>
-      <div style={{ display: 'flex', gap: '12px' }}>
-        <button class="btn-theme" onClick={props.onToggleTheme}>
-          {props.themeLabel()}
-        </button>
-        <button
-          class="btn"
-          onClick={props.onPowerOff}
-          title="Safely power off the Raspberry Pi"
-        >
-          ⏻ POWER OFF
-        </button>
-        <button class="btn-emergency" onClick={props.onStopAll}>
-          ■ STOP ALL
-        </button>
+      <div>
+        <div class="menu-desktop" style={{ display: 'flex', gap: '12px' }}>
+          <MenuBtns {...props} />
+        </div>
+
+        <div class="menu-mobile">
+          <button class="btn btn-hamburger" onClick={toggleMobile} aria-label="Menu">
+            ☰
+          </button>
+          {mobileOpen() && (
+            <div class="mobile-dropdown">
+              <MenuBtns {...props} />
+            </div>
+          )}
+        </div>
       </div>
+      <style>
+        {`
+        .menu-mobile { display: none; position: relative; }
+        .btn-hamburger { font-size: 20px; padding: 6px 10px; }
+        .mobile-dropdown { position: absolute; right: 0; top: 40px; background: var(--surface); border: var(--border); padding: 8px; display: flex; flex-direction: column; gap: 8px; z-index: 50; }
+        @media (max-width: 640px) {
+          .menu-desktop { display: none !important; }
+          .menu-mobile { display: block; }
+        }
+        `}
+      </style>
     </header>
   );
 };
