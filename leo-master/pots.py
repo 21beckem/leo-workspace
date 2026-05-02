@@ -16,18 +16,18 @@ _MAX_RAW    = 32767  # ADS1115 positive full-scale in single-ended mode
 
 class Pots:
     def __init__(self, i2c) -> None:
-        ads1 = ADS.ADS1115(i2c, address=0x48)  # joints 1–4
-        ads2 = ADS.ADS1115(i2c, address=0x49)  # joints 5–8
+        ads1 = ADS.ADS1115(i2c, address=0x48)
+        ads2 = ADS.ADS1115(i2c, address=0x49)
 
         self._channels: list[AnalogIn] = [
-            AnalogIn(ads1, 0),  # joint 1
-            AnalogIn(ads1, 1),  # joint 2
-            AnalogIn(ads1, 2),  # joint 3
-            AnalogIn(ads1, 3),  # joint 4
-            AnalogIn(ads2, 0),  # joint 5
-            AnalogIn(ads2, 1),  # joint 6
-            AnalogIn(ads2, 2),  # joint 7
-            AnalogIn(ads2, 3),  # joint 8
+            AnalogIn(ads1, 1),  # joint 1  |  Right Hip
+            AnalogIn(ads1, 3),  # joint 2  |  Right Upper-leg
+            AnalogIn(ads2, 3),  # joint 3  |  Right Lower-leg
+            AnalogIn(ads2, 1),  # joint 4  |  Right Ankle
+            AnalogIn(ads1, 0),  # joint 5  |  Left Hip
+            AnalogIn(ads1, 2),  # joint 6  |  Left Upper-leg
+            AnalogIn(ads2, 2),  # joint 7  |  Left Lower-leg
+            AnalogIn(ads2, 0),  # joint 8  |  Left Ankle
         ]
 
     def read_all(self) -> list[float]:
