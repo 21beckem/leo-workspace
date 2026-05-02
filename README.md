@@ -12,7 +12,7 @@ Yay Leo!
     - That will open a file editor. Add this line to the very bottom:
         - **Note**: It must be an absolute path. No `~/...` or `./...`
         ```bash
-        michael ALL=(ALL) NOPASSWD: /home/michael/leo-workspace/power_off_pi/power_off.sh
+        michael ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot, /sbin/poweroff
         ```
 5. Install needed pip libs:
 ```bash
