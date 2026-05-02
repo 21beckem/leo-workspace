@@ -1,4 +1,4 @@
-import { Component, createSignal } from 'solid-js';
+import { Component, createSignal, Show } from 'solid-js';
 import { MotorSlider } from './MotorSlider';
 
 interface SliderCardProps {
@@ -6,6 +6,7 @@ interface SliderCardProps {
   name: string;
   onChange: (value: number) => void;
   onStop: () => void;
+  background?: Component;
 }
 
 export const SliderCard: Component<SliderCardProps> = (props) => {
@@ -33,6 +34,11 @@ export const SliderCard: Component<SliderCardProps> = (props) => {
 
   return (
     <div class={getCardClass()}>
+      <Show when={props.background}>
+        <div class="control-background">
+         {props.background && <props.background />}
+        </div>
+      </Show>
       <div class="control-tag">{props.tag}</div>
       <div class="control-label">{props.name}</div>
 

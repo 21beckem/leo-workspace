@@ -1,6 +1,7 @@
 import { Component, For } from 'solid-js';
 import { ROBOT_JOINTS, JointType, createMotionStore } from '../stores';
 import { SliderCard } from '../components/SliderCard';
+import { Graph } from '../components/Graph';
 
 interface JointControlTabProps {
   motion: ReturnType<typeof createMotionStore>;
@@ -13,6 +14,9 @@ export const JointControlTab: Component<JointControlTabProps> = (props) => {
         {joint =>
 					<div style={{ 'position': 'relative' }}>
 						<SliderCard
+                  background={() =>
+                    <Graph sample={props.motion.getPots()[joint.name]} />
+                  }
               tag=''
               name={joint.name}
               onChange={value => {

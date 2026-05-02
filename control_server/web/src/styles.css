@@ -282,6 +282,14 @@ header {
 .control-card.fwd { border-color: rgba(0,232,122,0.25); box-shadow: 0 0 20px rgba(0,232,122,0.06); }
 .control-card.rev { border-color: rgba(255,59,59,0.25);  box-shadow: 0 0 20px rgba(255,59,59,0.06); }
 
+.control-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
 .control-tag {
   font-size: 10px;
   letter-spacing: 0.2em;
