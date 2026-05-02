@@ -12,11 +12,12 @@ Yay Leo!
     - That will open a file editor. Add this line to the very bottom:
         - **Note**: It must be an absolute path. No `~/...` or `./...`
         ```bash
-        username ALL=(ALL) NOPASSWD: /home/michael/leo-workspace/power_off_pi/power_off.sh
+        michael ALL=(ALL) NOPASSWD: /home/michael/leo-workspace/power_off_pi/power_off.sh
         ```
 5. Install needed pip libs:
 ```bash
 pip3 install aiohttp adafruit-circuitpython-pca9685 adafruit-blinka
+pip3 install adafruit-circuitpython-ads1x15 --break-system-packages
 ```
 
 ## Connection
