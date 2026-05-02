@@ -1,20 +1,20 @@
 #!/home/michael/leo-workspace/py/bin/python
+"""
+start.py — Web server for LEO.
+Handles HTTP, WebSocket, and the GitHub Pages proxy.
+All robot logic is delegated to the LEO class in leo.py.
+"""
 
 import asyncio
 import json
-import atexit
 import logging
-import pathlib
 import socket
-import subprocess
 
-import board
-import busio
-import adafruit_pca9685
 from aiohttp import web, WSMsgType, ClientSession
+
 import sys
-sys.path.append('/home/michael/leo-workspace/power_off_pi')
-from power_off_pi import power_off_pi
+sys.path.append('/home/michael/leo-workspace/leo-master')
+from leo import LEO
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -24,57 +24,30 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ── PCA9685 / Motor hardware setup ────────────────────────────────────────────
-i2c = busio.I2C(board.SCL, board.SDA)
-pca = adafruit_pca9685.PCA9685(i2c)
-pca.frequency = 60
+# ── Robot instance ────────────────────────────────────────────────────────────
+leo = LEO()
 
-MAX_DUTY = 65535  # 16-bit full scale
+# ── Connected WebSocket clients (for pot broadcasts) ─────────────────────────
+_clients: set[web.WebSocketResponse] = set()
 
-# Motor channel pairs — matches the assignments in bendBackAndForth.py.
-# Each tuple is (channel_A, channel_B); driving A → one direction, B → other.
-MOTORS: dict[str, tuple] = {
-    "A": (pca.channels[0],  pca.channels[1]),
-    "B": (pca.channels[10], pca.channels[11]),
-    "C": (pca.channels[2],  pca.channels[3]),
-    "D": (pca.channels[9],  pca.channels[8]),
-    "E": (pca.channels[4],  pca.channels[5]),
-    "F": (pca.channels[14], pca.channels[15]),
-    "G": (pca.channels[13], pca.channels[12]),
-    "H": (pca.channels[6],  pca.channels[7]),
-}
+POT_BROADCAST_HZ = 20  # how often to push pot values to the browser
 
 
-def set_motor(name: str, value: float) -> None:
-    """
-    Drive a motor at normalised power.
-      value =  1.0  → full power, channel-A direction  (maps to dir=0 in original)
-      value = -1.0  → full power, channel-B direction  (maps to dir=1 in original)
-      value =  0.0  → coast (both channels off)
-    `value` is clamped to [-1, 1] before use.
-    """
-    value = max(-1.0, min(1.0, value))
-    ch_a, ch_b = MOTORS[name]
-    duty = int(abs(value) * MAX_DUTY)
-
-    if value > 0:
-        ch_b.duty_cycle = 0
-        ch_a.duty_cycle = duty
-    elif value < 0:
-        ch_a.duty_cycle = 0
-        ch_b.duty_cycle = duty
-    else:
-        ch_a.duty_cycle = 0
-        ch_b.duty_cycle = 0
-
-
-def stop_all() -> None:
-    """Zero every PCA9685 channel — all motors coast immediately."""
-    for i in range(16):
-        pca.channels[i].duty_cycle = 0
-
-
-atexit.register(stop_all)  # runs on clean exit (Ctrl-C, etc.)
+# ── Pot broadcast loop ────────────────────────────────────────────────────────
+async def _broadcast_pots() -> None:
+    """Push pot values to all connected clients at POT_BROADCAST_HZ."""
+    interval = 1.0 / POT_BROADCAST_HZ
+    while True:
+        if _clients:
+            msg = json.dumps({"type": "pots", "values": leo.pot_values})
+            dead = set()
+            for ws in _clients:
+                try:
+                    await ws.send_str(msg)
+                except Exception:
+                    dead.add(ws)
+            _clients.difference_update(dead)
+        await asyncio.sleep(interval)
 
 
 # ── WebSocket handler ─────────────────────────────────────────────────────────
@@ -83,23 +56,24 @@ async def ws_handler(request: web.Request) -> web.WebSocketResponse:
     await ws.prepare(request)
 
     peer = request.remote
-    log.info("Client connected    [%s]", peer)
+    _clients.add(ws)
+    log.info("Client connected    [%s]  (total: %d)", peer, len(_clients))
 
     try:
         async for msg in ws:
             if msg.type == WSMsgType.TEXT:
-                _dispatch(msg.data, peer, ws)
+                _dispatch(msg.data, peer)
             elif msg.type == WSMsgType.ERROR:
                 log.error("WS error from %s: %s", peer, ws.exception())
     finally:
-        # Safety: stop everything the moment this browser tab disconnects.
-        stop_all()
-        log.info("Client disconnected [%s] — all motors stopped", peer)
+        _clients.discard(ws)
+        leo.stop_all()
+        log.info("Client disconnected [%s] — all motors stopped  (total: %d)", peer, len(_clients))
 
     return ws
 
 
-def _dispatch(raw: str, peer: str, ws: web.WebSocketResponse) -> None:
+def _dispatch(raw: str, peer: str) -> None:
     """Parse and execute one WebSocket message."""
     try:
         data = json.loads(raw)
@@ -111,7 +85,7 @@ def _dispatch(raw: str, peer: str, ws: web.WebSocketResponse) -> None:
 
     if kind == "motor":
         motor = str(data.get("motor", "")).upper()
-        if motor not in MOTORS:
+        if motor not in leo.motor_names:
             log.warning("Unknown motor %r from %s", motor, peer)
             return
         try:
@@ -119,36 +93,32 @@ def _dispatch(raw: str, peer: str, ws: web.WebSocketResponse) -> None:
         except (KeyError, TypeError, ValueError) as exc:
             log.warning("Bad motor value from %s: %s", peer, exc)
             return
-        set_motor(motor, value)
+        leo.set_motor(motor, value)
 
     elif kind == "stop_all":
-        stop_all()
+        leo.stop_all()
         log.info("STOP ALL ← %s", peer)
 
     elif kind == "poweroff":
-        log.info("POWER OFF ← %s — stopping motors and shutting down", peer)
-        stop_all()
-        power_off_pi()
+        log.info("POWER OFF ← %s", peer)
+        leo.power_off()
 
     else:
         log.warning("Unknown command %r from %s", kind, peer)
 
 
-# ── App assembly ──────────────────────────────────────────────────────────────
-
-async def proxy_handler(request):
+# ── GitHub Pages proxy ────────────────────────────────────────────────────────
+async def proxy_handler(request: web.Request) -> web.Response:
     async with ClientSession() as session:
-        # If the incoming path starts with "/leo-workspace", strip that prefix
         path_qs = request.path_qs
-        prefix = "/leo-workspace"
+        prefix  = "/leo-workspace"
         if path_qs.startswith(prefix):
             path_qs = path_qs[len(prefix):]
-            if path_qs == "":
+            if not path_qs:
                 path_qs = "/"
 
         target_url = f"https://21beckem.github.io/leo-workspace{path_qs}"
 
-        # Forward the request to the target server
         async with session.get(target_url) as resp:
             data = await resp.read()
             return web.Response(
@@ -157,16 +127,26 @@ async def proxy_handler(request):
                 content_type=resp.content_type,
             )
 
+
+# ── App startup ───────────────────────────────────────────────────────────────
+async def on_startup(app: web.Application) -> None:
+    leo.start_polling()
+    asyncio.create_task(_broadcast_pots())
+    log.info("Pot polling and broadcast loop started")
+
+
+# ── App assembly ──────────────────────────────────────────────────────────────
 def build_app() -> web.Application:
     app = web.Application()
+    app.on_startup.append(on_startup)
+    # /ws must be registered before the catch-all proxy route
+    app.router.add_get("/ws",       ws_handler)
     app.router.add_get("/{path:.*}", proxy_handler)
-    app.router.add_get("/ws", ws_handler)
     return app
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    # Try to show the LAN IP so the user knows what to type in a browser
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
@@ -176,7 +156,7 @@ if __name__ == "__main__":
         lan_ip = "?"
 
     log.info("━" * 54)
-    log.info("  Robot control server is running!")
+    log.info("  LEO control server is running!")
     log.info("  Open in any browser →  http://%s:9300", lan_ip)
     log.info("  Or →  https://21beckem.github.io/leo-workspace/")
     log.info("━" * 54)
