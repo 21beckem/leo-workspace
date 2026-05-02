@@ -1,9 +1,9 @@
 import { Component, For } from 'solid-js';
-import { MOTOR_NAMES, createMotionControlStore } from '../stores';
+import { MOTOR_NAMES, createMotionStore } from '../stores';
 import { SliderCard } from '../components/SliderCard';
 
 interface MotorControlTabProps {
-  motionControl: ReturnType<typeof createMotionControlStore>;
+  motion: ReturnType<typeof createMotionStore>;
 }
 
 export const MotorControlTab: Component<MotorControlTabProps> = (props) => {
@@ -15,9 +15,9 @@ export const MotorControlTab: Component<MotorControlTabProps> = (props) => {
             tag='MOTOR'
             name={motorName}
             onChange={value => 
-              props.motionControl.setMotorValue(motorName, value)
+              props.motion.setMotorValue(motorName, value)
             }
-            onStop={() => props.motionControl.stopMotor(motorName)}
+            onStop={() => props.motion.stopMotor(motorName)}
           />
         }
       </For>

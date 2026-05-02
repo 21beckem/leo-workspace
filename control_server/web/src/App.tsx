@@ -3,7 +3,7 @@ import { Dynamic } from "solid-js/web";
 import {
   createConnectionStore,
   createThemeStore,
-  createMotionControlStore
+  createMotionStore
 } from './stores';
 import { WebSocketService } from './websocket.service';
 import { Header } from './components/Header';
@@ -50,9 +50,9 @@ const App: Component = () => {
     },
     onError: (message) => {
       console.error('WS Error:', message);
-    },
+    }
   });
-  const motionControl = createMotionControlStore(wsService);
+  const motion = createMotionStore(wsService);
 
   // Handle power off with confirmation
   const handlePowerOff = () => {
@@ -79,7 +79,7 @@ const App: Component = () => {
   };
 
   const handleDisconnect = () => {
-    motionControl.resetAllMotors();
+    motion.resetAllMotors();
     wsService.disconnect();
   };
 
@@ -103,7 +103,7 @@ const App: Component = () => {
         onToggleTheme={() => themeStore.toggleTheme()}
         themeLabel={() => themeStore.getThemeLabel()}
         onPowerOff={handlePowerOff}
-        motionControl={motionControl}
+        motion={motion}
       />
       <ConnectionBar
         host={() => connectionStore.connection.host}
@@ -124,7 +124,7 @@ const App: Component = () => {
         <Dynamic component={
             WINDOW_TABS.find(tab => tab.key === currentTab())?.Renderer || (() => <div>Invalid tab</div>)
           }
-          motionControl={motionControl}
+          motion={motion}
         />
       </Show>
     </>

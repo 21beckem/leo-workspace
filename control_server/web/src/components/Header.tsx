@@ -1,5 +1,5 @@
 import { Component, Accessor, createSignal } from 'solid-js';
-import { ConnectionState, createMotionControlStore } from '../stores';
+import { ConnectionState, createMotionStore } from '../stores';
 
 interface HeaderProps {
   connectionState: Accessor<ConnectionState>;
@@ -7,7 +7,7 @@ interface HeaderProps {
   onToggleTheme: () => void;
   themeLabel: Accessor<string>;
   onPowerOff: () => void;
-  motionControl: ReturnType<typeof createMotionControlStore>;
+  motion: ReturnType<typeof createMotionStore>;
 }
 
 const MenuBtns: Component<HeaderProps> = (props) => {
@@ -23,7 +23,7 @@ const MenuBtns: Component<HeaderProps> = (props) => {
       >
         ⏻ POWER OFF
       </button>
-      <button class="btn-emergency" onClick={() => props.motionControl.resetAllMotors()}>
+      <button class="btn-emergency" onClick={() => props.motion.resetAllMotors()}>
         ■ STOP ALL
       </button>
     </>

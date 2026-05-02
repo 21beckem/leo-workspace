@@ -7,55 +7,55 @@ export enum JointType {
   ADDITIVE = 'additive',
   DIFFERENCE = 'difference',
 }
-export const JOINT_NAMES = ['L Ankle', 'L Lower', 'L Upper', 'L Hip', 'R Ankle', 'R Lower', 'R Upper', 'R Hip'] as const;
+export const JOINT_NAMES = ['R-H', 'R-U', 'R-L', 'R-A', 'L-H', 'L-U', 'L-L', 'L-A'] as const;
 export const ROBOT_JOINTS: [Joint, Joint, Joint, Joint, Joint, Joint, Joint, Joint] = [
   {
-    name: 'L Ankle',
+    name: 'L-A',
     motors: ['A', 'B'],
     type: JointType.DIFFERENCE,
     value: 0
   },
   {
-    name: 'L Lower',
+    name: 'L-L',
     motors: ['A', 'B'],
     type: JointType.ADDITIVE,
     value: 0
   },
   
   {
-    name: 'L Upper',
+    name: 'L-U',
     motors: ['C', 'D'],
     type: JointType.ADDITIVE,
     value: 0
   },
   {
-    name: 'L Hip',
+    name: 'L-H',
     motors: ['C', 'D'],
     type: JointType.DIFFERENCE,
     value: 0
   },
   
   {
-    name: 'R Ankle',
+    name: 'R-A',
     motors: ['E', 'F'],
     type: JointType.DIFFERENCE,
     value: 0
   },
   {
-    name: 'R Lower',
+    name: 'R-L',
     motors: ['E', 'F'],
     type: JointType.ADDITIVE,
     value: 0
   },
   
   {
-    name: 'R Upper',
+    name: 'R-U',
     motors: ['G', 'H'],
     type: JointType.ADDITIVE,
     value: 0
   },
   {
-    name: 'R Hip',
+    name: 'R-H',
     motors: ['G', 'H'],
     type: JointType.DIFFERENCE,
     value: 0
@@ -77,7 +77,29 @@ export interface Joint {
   value: number; // -1 to 1
 }
 
-export const createMotionControlStore = (wsService: WebSocketService) => {
+export interface Pots {
+  [jointName: string]: number;
+}
+
+export const createMotionStore = (wsService: WebSocketService) => {
+  const [pots, setPots] = createStore<Pots>({
+      "R-H": 0.0,
+      "R-U": 0.0,
+      "R-L": 0.0,
+      "R-A": 0.0,
+      "L-H": 0.0,
+      "L-U": 0.0,
+      "L-L": 0.0,
+      "L-A": 0.0,
+  });
+  wsService.updateConfig({
+    onPotsUpdate: (values) => {
+      // Update the pots store with the new values
+      Object.entries(values).forEach(([jointName, value]) => {
+        setPots(jointName, value);
+      });
+    }
+  });
   return {
     setMotorValue: (name: MotorName, value: number) => {
       wsService.sendMotor(name, value, true);
@@ -87,7 +109,8 @@ export const createMotionControlStore = (wsService: WebSocketService) => {
     },
     resetAllMotors: () => {
       wsService.sendStopAll();
-    }
+    },
+    getPots: () => pots,
   }
 };
 

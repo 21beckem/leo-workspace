@@ -1,8 +1,9 @@
-import { ConnectionState, MotorName } from './stores';
+import { ConnectionState, MotorName, type Pots } from './stores';
 
 export interface WebSocketServiceConfig {
   onStateChange: (state: ConnectionState) => void;
   onStatusChange: (status: string) => void;
+  onPotsUpdate?: (values: Pots) => void;
   onMotorSend?: (motor: MotorName, value: number) => void;
   onError?: (message: string) => void;
 }
@@ -16,6 +17,10 @@ export class WebSocketService {
 
   constructor(config: WebSocketServiceConfig) {
     this.config = config;
+  }
+
+  updateConfig(config: Partial<WebSocketServiceConfig>) {
+    this.config = { ...this.config, ...config };
   }
 
   connect(host: string, port: string): void {
@@ -57,6 +62,8 @@ export class WebSocketService {
         if (d.type === 'error') {
           console.warn('[Server]', d.message);
           this.config.onError?.(d.message);
+        } else if (d.type === 'pots') {
+          this.config.onPotsUpdate?.(d.values as Pots);
         }
       } catch {}
     };
