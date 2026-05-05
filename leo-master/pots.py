@@ -19,6 +19,18 @@ class Pots:
         ads1 = ADS.ADS1115(i2c, address=0x48)
         ads2 = ADS.ADS1115(i2c, address=0x49)
 
+        
+        self._offsets: list[float] = [
+            0.13428,  # joint 1  |  Right Hip
+            0.10498,  # joint 2  |  Right Upper-leg
+            0.33442,  # joint 3  |  Right Lower-leg
+            0.04059,  # joint 4  |  Right Ankle
+            0.25929,  # joint 5  |  Left Hip
+            0.62648,  # joint 6  |  Left Upper-leg
+            0.08405,  # joint 7  |  Left Lower-leg
+            0.46409,  # joint 8  |  Left Ankle
+        ]
+
         self._channels: list[AnalogIn] = [
             AnalogIn(ads1, 1),  # joint 1  |  Right Hip
             AnalogIn(ads1, 3),  # joint 2  |  Right Upper-leg
@@ -36,8 +48,8 @@ class Pots:
         Index 0 = joint 1, index 7 = joint 8.
         """
         return [
-            max(0.0, min(1.0, ch.value / _MAX_RAW))
-            for ch in self._channels
+            max(0.0, min(1.0, ch.value / _MAX_RAW)) - self._offsets[i]
+            for i, ch in enumerate(self._channels)
         ]
 
     def read_raw(self) -> list[int]:
@@ -49,4 +61,6 @@ class Pots:
         Read a single joint (0-indexed) as a normalised float.
         Raises IndexError for out-of-range joints.
         """
-        return max(0.0, min(1.0, self._channels[joint].value / _MAX_RAW))
+        if not 0 <= joint < JOINT_COUNT:
+            raise IndexError("Joint index out of range")
+        return max(0.0, min(1.0, self._channels[joint].value / _MAX_RAW)) - self._offsets[joint]

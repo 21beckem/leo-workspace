@@ -46,8 +46,8 @@ export const Graph: Component<GraphProps> = (props) => {
 						}
 					},
 					y: {
-						min: 0,
-						max: 1
+						min: -0.1,
+						max: 0.1
 					}
 				}
 			}
