@@ -108,7 +108,7 @@ export const createMotionStore = (wsService: WebSocketService) => {
     stopMotor: (name: MotorName) => {
       wsService.sendMotor(name, 0, false);
     },
-    resetAllMotors: () => {
+    stopAllMotors: () => {
       wsService.sendStopAll();
     },
     getPots: () => pots,

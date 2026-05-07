@@ -1,5 +1,5 @@
-import { Component, For, onCleanup } from 'solid-js';
-import { JointType, ROBOT_JOINTS, createMotionStore, createPidStore } from '../stores';
+import { Component, For, onCleanup, createSignal } from 'solid-js';
+import { JointName, ROBOT_JOINTS, createMotionStore, createPidStore } from '../stores';
 import { SliderCard } from '../components/SliderCard';
 import { Graph } from '../components/Graph';
 import { NumericDrag } from '../components/NumericDrag';
@@ -10,6 +10,32 @@ interface JointPidControlTabProps {
 }
 
 export const JointPidControlTab: Component<JointPidControlTabProps> = (props) => {
+  const [getIsCrouched, setRawIsCrouched] = createSignal(false);
+	const setIsCrouched = (value: boolean | ((v: boolean) => boolean)) => {
+		if (typeof value === 'function')
+			return setIsCrouched(value(getIsCrouched()));
+		setRawIsCrouched(value);
+		if (value) {
+			props.pid.setTarget('R-U', 0.06);
+			props.pid.setTarget('R-L', 0.06);
+			props.pid.setTarget('L-U', 0.06);
+			props.pid.setTarget('L-L', 0.06);
+		} else {
+			props.pid.setTarget('R-U', 0);
+			props.pid.setTarget('R-L', 0);
+			props.pid.setTarget('L-U', 0);
+			props.pid.setTarget('L-L', 0);
+		}
+	}
+
+	const setTarget = (jointName: JointName, value: number) => {
+		setRawIsCrouched(false);
+		props.pid.setTarget(jointName, value);
+	}
+
+	onCleanup(() => {
+		props.motion.stopAllMotors();
+	});
   onCleanup(() => {
     props.pid.stop();
   });
@@ -23,6 +49,9 @@ export const JointPidControlTab: Component<JointPidControlTabProps> = (props) =>
           </button>
           <button class="btn-emergency" onClick={() => props.pid.stop()}>
             STOP PID
+          </button>
+          <button class={`btn ${getIsCrouched() ? 'active' : ''}`} onClick={() => setIsCrouched(v => !v)}>
+            Crouch
           </button>
         </div>
       </div>
@@ -84,8 +113,8 @@ export const JointPidControlTab: Component<JointPidControlTabProps> = (props) =>
                 name={joint.name}
                 snapToZero={false}
                 stopText='■ ZERO'
-                onChange={(value) => props.pid.setTarget(joint.name, value/10)}
-                onStop={() => props.pid.setTarget(joint.name, 0)}
+                onChange={(value) => setTarget(joint.name, value/10)}
+                onStop={() => setTarget(joint.name, 0)}
               />
               <div
                 style={{

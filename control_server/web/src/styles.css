@@ -137,6 +137,7 @@ header {
 .btn-theme:hover { border-color: var(--accent); color: var(--text); }
 
 /* Power off button */
+.btn:hover  { border-color: var(--border-hi); color: var(--border-hi); }
 .btn {
   background: none;
   color: var(--text-dim);
@@ -151,7 +152,6 @@ header {
   transition: border-color 0.15s, color 0.15s, background 0.15s;
   white-space: nowrap;
 }
-.btn:hover  { border-color: var(--accent); color: var(--accent); }
 .btn:active { opacity: 0.7; }
 .btn.active {
   border-color: var(--accent);

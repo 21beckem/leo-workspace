@@ -23,7 +23,7 @@ const MenuBtns: Component<HeaderProps> = (props) => {
       >
         ⏻ POWER OFF
       </button>
-      <button class="btn-emergency" onClick={() => props.motion.resetAllMotors()}>
+      <button class="btn-emergency" onClick={() => props.motion.stopAllMotors()}>
         ■ STOP ALL
       </button>
     </>

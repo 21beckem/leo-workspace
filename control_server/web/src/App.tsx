@@ -87,7 +87,7 @@ const App: Component = () => {
   };
 
   const handleDisconnect = () => {
-    motion.resetAllMotors();
+    motion.stopAllMotors();
     wsService.disconnect();
   };
 
