@@ -15,11 +15,15 @@ export const JointControlTab: Component<JointControlTabProps> = (props) => {
         {joint =>
 					<div style={{ 'position': 'relative' }}>
 						<SliderCard
-                  background={() =>
-                    <Graph sample={props.motion.getPots()[joint.name]} />
-                  }
+              background={() =>
+                <Graph
+                  sample={props.motion.getPots()[joint.name]}
+                  yBounds={[-0.1, 0.1]}
+                />
+              }
               tag=''
               name={joint.name}
+              snapToZero={true}
               onChange={value => {
                 if (joint.type === JointType.ADDITIVE) {
                   props.motion.setMotorValue(joint.motors[0], value);

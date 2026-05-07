@@ -8,6 +8,8 @@ interface SliderCardProps {
   onStop: () => void;
   value?: () => number;
   background?: Component;
+  snapToZero?: boolean;
+  stopText?: string;
 }
 
 export const SliderCard: Component<SliderCardProps> = (props) => {
@@ -49,11 +51,11 @@ export const SliderCard: Component<SliderCardProps> = (props) => {
       <div class="control-tag">{props.tag}</div>
       <div class="control-label">{props.name}</div>
 
-      <MotorSlider value={value} onChange={onChange} />
+      <MotorSlider snapToZero={props.snapToZero ? true : false} value={value} onChange={onChange} />
 
       <div class="control-readout">{getReadout()}</div>
       <button class="btn-control-stop" onClick={props.onStop}>
-        ■ STOP
+        {props.stopText ?? '■ STOP'}
       </button>
     </div>
   );

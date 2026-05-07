@@ -2,9 +2,10 @@ import { Component, createEffect, onMount, onCleanup } from 'solid-js';
 import Chart from 'chart.js/auto';
 
 interface GraphProps {
-  sample: number;
+  	sample: number;
 	demand?: number;
-  maxPoints?: number;
+ 	maxPoints?: number;
+	yBounds?: [number, number];
 }
 
 export const Graph: Component<GraphProps> = (props) => {
@@ -64,8 +65,8 @@ export const Graph: Component<GraphProps> = (props) => {
 						}
 					},
 					y: {
-						min: -1.1,
-						max: 1.1
+						min: props.yBounds?.[0] ?? -1.1,
+						max: props.yBounds?.[1] ?? 1.1
 					}
 				}
 			}

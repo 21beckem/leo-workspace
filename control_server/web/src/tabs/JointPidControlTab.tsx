@@ -1,5 +1,5 @@
 import { Component, For, onCleanup } from 'solid-js';
-import { ROBOT_JOINTS, createMotionStore, createPidStore } from '../stores';
+import { JointType, ROBOT_JOINTS, createMotionStore, createPidStore } from '../stores';
 import { SliderCard } from '../components/SliderCard';
 import { Graph } from '../components/Graph';
 
@@ -39,13 +39,16 @@ export const JointPidControlTab: Component<JointPidControlTabProps> = (props) =>
                   <Graph
                     sample={props.motion.getPots()[joint.name]}
                     demand={props.pid.getTargets()[joint.name]}
+                    yBounds={[-0.1, 0.1]}
                   />
                 )}
-                value={() => props.pid.getTargets()[joint.name]}
-                tag="PID"
+                value={() => props.pid.getTargets()[joint.name]*10}
+                tag=''
                 name={joint.name}
-                onChange={(value) => props.pid.setTarget(joint.name, value)}
-                onStop={() => props.pid.setTarget(joint.name, props.motion.getPots()[joint.name])}
+                snapToZero={false}
+                stopText='■ ZERO'
+                onChange={(value) => props.pid.setTarget(joint.name, value/10)}
+                onStop={() => props.pid.setTarget(joint.name, 0)}
               />
               <div
                 style={{

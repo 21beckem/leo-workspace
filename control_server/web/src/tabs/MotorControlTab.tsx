@@ -15,6 +15,7 @@ export const MotorControlTab: Component<MotorControlTabProps> = (props) => {
           <SliderCard
             tag='MOTOR'
             name={motorName}
+            snapToZero={true}
             onChange={value => 
               props.motion.setMotorValue(motorName, value)
             }

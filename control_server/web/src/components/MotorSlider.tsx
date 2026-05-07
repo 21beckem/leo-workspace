@@ -6,6 +6,7 @@ const TRACK_H = 188;
 interface MotorSliderProps {
   value: () => number;
   onChange: (value: number, send?: boolean) => void;
+  snapToZero?: boolean;
 }
 
 export const MotorSlider: Component<MotorSliderProps> = (props) => {
@@ -67,7 +68,8 @@ export const MotorSlider: Component<MotorSliderProps> = (props) => {
     if (!isDragging()) return;
     setIsDragging(false);
     if (zoneRef) zoneRef.classList.remove('dragging');
-    props.onChange(0, false);
+    if (props.snapToZero === true)
+      props.onChange(0, false);
   };
 
   createEffect(() => {

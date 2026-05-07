@@ -22,14 +22,14 @@ log = logging.getLogger(__name__)
 POT_POLL_HZ = 20  # how often to read the potentiometers
 
 PID_JOINTS: tuple[JointConfig, ...] = (
-    JointConfig("R-H", ("G", "H"), opposite_directions=True),
-    JointConfig("R-U", ("G", "H"), opposite_directions=False),
-    JointConfig("R-L", ("E", "F"), opposite_directions=False),
-    JointConfig("R-A", ("E", "F"), opposite_directions=True),
-    JointConfig("L-H", ("C", "D"), opposite_directions=True),
-    JointConfig("L-U", ("C", "D"), opposite_directions=False),
-    JointConfig("L-L", ("A", "B"), opposite_directions=False),
-    JointConfig("L-A", ("A", "B"), opposite_directions=True),
+    JointConfig("R-H", ("G", "H"), kind="difference"),
+    JointConfig("R-U", ("G", "H"), kind="additive"),
+    JointConfig("R-L", ("E", "F"), kind="additive"),
+    JointConfig("R-A", ("E", "F"), kind="difference"),
+    JointConfig("L-H", ("C", "D"), kind="difference"),
+    JointConfig("L-U", ("C", "D"), kind="additive"),
+    JointConfig("L-L", ("A", "B"), kind="additive"),
+    JointConfig("L-A", ("A", "B"), kind="difference"),
 )
 
 

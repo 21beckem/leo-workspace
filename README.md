@@ -16,7 +16,7 @@ Yay Leo!
         ```
 5. Install needed pip libs:
 ```bash
-pip3 install aiohttp adafruit-circuitpython-pca9685 adafruit-blinka
+pip3 install aiohttp adafruit-circuitpython-pca9685 adafruit-blinka simple-pid
 pip3 install adafruit-circuitpython-ads1x15 --break-system-packages
 ```
 
