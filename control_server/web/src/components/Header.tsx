@@ -61,7 +61,7 @@ export const Header: Component<HeaderProps> = (props) => {
       <style>
         {`
         .menu-mobile { display: none; position: relative; }
-        .btn-hamburger { font-size: 20px; padding: 6px 10px; }
+        .btn-hamburger { font-size: 20px; padding: 0; border: none; }
         .mobile-dropdown { position: absolute; right: 0; top: 40px; background: var(--surface); border: var(--border); padding: 8px; display: flex; flex-direction: column; gap: 8px; z-index: 50; }
         @media (max-width: 640px) {
           .menu-desktop { display: none !important; }

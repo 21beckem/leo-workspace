@@ -26,9 +26,15 @@ JointKind = Literal["additive", "difference"]
 @dataclass(frozen=True)
 class JointConfig:
     name: str
+    tune: PidTuning
     motors: tuple[str, str]
     kind: JointKind
 
+@dataclass(frozen=True)
+class PidTuning:
+    kp: float
+    ki: float
+    kd: float
 
 @dataclass(frozen=True)
 class MotorPairConfig:
@@ -44,9 +50,6 @@ class Pid:
         read_position_fn: Callable[[str], float],
         set_motor_fn: Callable[[str, float], None],
         *,
-        kp: float = 1.0,
-        ki: float = 0.0,
-        kd: float = 0.0,
         sample_rate_hz: int = CONTROL_HZ,
     ) -> None:
         if len(joint_configs) != NUM_JOINTS:
@@ -89,7 +92,7 @@ class Pid:
         self._controllers: list[SimplePID] = []
         self._targets: dict[str, float] = {}
         for config in self._joint_configs:
-            controller = SimplePID(kp, ki, kd, setpoint=0.0, output_limits=(MOTOR_MIN, MOTOR_MAX), sample_time=None)
+            controller = SimplePID(config.tune.kp, config.tune.ki, config.tune.kd, setpoint=0.0, output_limits=(MOTOR_MIN, MOTOR_MAX), sample_time=None)
             self._controllers.append(controller)
             self._controllers_by_joint[config.name] = controller
             self._targets[config.name] = 0.0
@@ -146,6 +149,18 @@ class Pid:
             "running": self._running,
             "targets": self.get_targets(),
         }
+
+    def set_tuning_all(self, kp: float, ki: float, kd: float) -> None:
+        """Set Kp, Ki, Kd for all controllers at once."""
+        for c in self._controllers:
+            c.tunings = (kp, ki, kd)
+
+    def get_tuning(self) -> tuple[float, float, float]:
+        """Return (Kp, Ki, Kd) from the first controller (assumes uniform tuning)."""
+        if not self._controllers:
+            return (0.0, 0.0, 0.0)
+        c = self._controllers[0]
+        return (float(c.Kp), float(c.Ki), float(c.Kd))
 
     def _controller_for(self, joint: str) -> SimplePID:
         try:

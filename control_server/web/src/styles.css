@@ -36,7 +36,7 @@
 /* ── Reset & base ────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
+html, body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Courier New', Courier, monospace;
@@ -209,8 +209,8 @@ header {
   transition: border-color 0.15s;
 }
 .field-group input:focus { border-color: var(--accent); }
-#hostInput { width: 155px; }
-#portInput { width: 64px; }
+#hostInput { width: 125px; }
+#portInput { width: 55px; }
 
 .btn-connect {
   background: var(--surface2);

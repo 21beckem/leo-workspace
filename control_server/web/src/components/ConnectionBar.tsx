@@ -23,7 +23,6 @@ export const ConnectionBar: Component<ConnectionBarProps> = (props) => {
   return (
     <div class="connect-bar">
       <div class="field-group">
-        <label for="hostInput">HOST</label>
         <input
           id="hostInput"
           type="text"
@@ -35,7 +34,6 @@ export const ConnectionBar: Component<ConnectionBarProps> = (props) => {
         />
       </div>
       <div class="field-group">
-        <label for="portInput">PORT</label>
         <input
           id="portInput"
           type="text"
@@ -50,7 +48,9 @@ export const ConnectionBar: Component<ConnectionBarProps> = (props) => {
       >
         {props.isConnected() ? 'DISCONNECT' : 'CONNECT'}
       </button>
-      <span class="status-label">{props.statusLabel()}</span>
+      {['connected', 'disconnected'].includes(props.statusLabel().toLowerCase()) ? '' : 
+        <span class="status-label">{props.statusLabel()}</span>
+      }
     </div>
   );
 };

@@ -8,15 +8,26 @@ interface TabsBarProps {
 }
 
 export const initTabs = (): [Accessor<string>, (tabKey: string) => void] => {
+	function scrollIntoViewIfNeeded(key: string) {
+		const btn = document.getElementById('tab-btn-for-' + key);
+		if (btn) {
+			const rect = btn.getBoundingClientRect();
+			if (rect.left < 0 || rect.right > window.innerWidth) {
+				btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+			}
+		}
+	}
 	const [tab, setRawTab] = createSignal(sessionStorage.getItem('lastTab') || WINDOW_TABS[0].key);
 	const setTab = (tabKey: string) => {
 		if (WINDOW_TABS.some(t => t.key === tabKey)) {
 			sessionStorage.setItem('lastTab', tabKey);
 			setRawTab(tabKey);
+			scrollIntoViewIfNeeded(tabKey);
 		} else {
 			console.warn(`Invalid tab key: ${tabKey}`);
 		}
 	};
+	setTimeout(() => scrollIntoViewIfNeeded(tab()), 10);
 	return [tab, setTab];
 };
 
@@ -31,7 +42,8 @@ export const TabsBar: Component<TabsBarProps> = (props) => {
 	margin: 0;
 	background-color: var(--surface);
 	border-bottom: 1px solid var(--border);
-	padding: 8px 16px 0;
+	padding: 8px 12px 0;
+	overflow-x: auto;
 }
 .tabs-bar .btn {
 	border-bottom: none;
@@ -43,7 +55,7 @@ export const TabsBar: Component<TabsBarProps> = (props) => {
 			<div class="tabs-bar">
 				<For each={props.tabs}>
 					{(tab) => (
-						<button class={`btn ${props.getCurrentTab() === tab.key ? 'active' : ''}`} onClick={() => props.onTabChange(tab.key)}>
+						<button id={'tab-btn-for-'+tab.key} class={`btn ${props.getCurrentTab() === tab.key ? 'active' : ''}`} onClick={() => props.onTabChange(tab.key)}>
 							{tab.name}
 						</button>
 					)}

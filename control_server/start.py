@@ -83,6 +83,7 @@ async def ws_handler(request: web.Request) -> web.WebSocketResponse:
 
     await ws.send_str(json.dumps({"type": "pid_state", "running": leo.pid_running}))
     await ws.send_str(json.dumps({"type": "pid_targets", "values": leo.get_pid_targets()}))
+    await ws.send_str(json.dumps({"type": "pid_tuning", "values": leo.get_pid_tuning()}))
 
     try:
         async for msg in ws:
@@ -145,6 +146,18 @@ def _dispatch(raw: str, peer: str) -> None:
             return
 
         asyncio.create_task(_broadcast_json({"type": "pid_target", "joint": joint, "value": leo.get_pid_targets()[joint]}))
+
+    elif kind == "pid_tune":
+        try:
+            kp = float(data.get("kp", 0.0))
+            ki = float(data.get("ki", 0.0))
+            kd = float(data.get("kd", 0.0))
+        except (TypeError, ValueError):
+            log.warning("Bad PID tuning from %s: %r", peer, data)
+            return
+
+        leo.set_pid_tuning(kp, ki, kd)
+        asyncio.create_task(_broadcast_json({"type": "pid_tuning", "values": leo.get_pid_tuning()}))
 
     elif kind == "stop_all":
         leo.stop_pid()

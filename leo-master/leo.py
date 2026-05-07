@@ -13,7 +13,7 @@ import busio
 
 from motors import Motors
 from pots   import Pots
-from pid import JointConfig, Pid
+from pid import JointConfig, PidTuning, Pid
 
 from power_off_pi import power_off_pi
 
@@ -22,14 +22,14 @@ log = logging.getLogger(__name__)
 POT_POLL_HZ = 20  # how often to read the potentiometers
 
 PID_JOINTS: tuple[JointConfig, ...] = (
-    JointConfig("R-H", ("G", "H"), kind="difference"),
-    JointConfig("R-U", ("G", "H"), kind="additive"),
-    JointConfig("R-L", ("E", "F"), kind="additive"),
-    JointConfig("R-A", ("E", "F"), kind="difference"),
-    JointConfig("L-H", ("C", "D"), kind="difference"),
-    JointConfig("L-U", ("C", "D"), kind="additive"),
-    JointConfig("L-L", ("A", "B"), kind="additive"),
-    JointConfig("L-A", ("A", "B"), kind="difference"),
+    JointConfig("R-H", PidTuning(10.00,  2.50,  0.00), ("G", "H"), kind="difference"),
+    JointConfig("R-U", PidTuning(15.00,  0.82,  0.19), ("G", "H"), kind="additive"),
+    JointConfig("R-L", PidTuning(15.00,  0.82,  0.19), ("E", "F"), kind="additive"),
+    JointConfig("R-A", PidTuning( 8.00,  2.00,  0.00), ("E", "F"), kind="difference"),
+    JointConfig("L-H", PidTuning( 8.00,  2.00,  0.00), ("C", "D"), kind="difference"),
+    JointConfig("L-U", PidTuning(15.00,  0.82,  0.19), ("C", "D"), kind="additive"),
+    JointConfig("L-L", PidTuning(15.00,  0.82,  0.19), ("A", "B"), kind="additive"),
+    JointConfig("L-A", PidTuning(10.00,  2.50,  0.00), ("A", "B"), kind="difference"),
 )
 
 
@@ -136,6 +136,16 @@ class LEO:
         if self.destroyed:
             return {"running": False, "targets": {}}
         return self._pid.snapshot()
+
+    def set_pid_tuning(self, kp: float, ki: float, kd: float) -> None:
+        if not self.destroyed:
+            self._pid.set_tuning_all(kp, ki, kd)
+
+    def get_pid_tuning(self) -> dict[str, float]:
+        if self.destroyed:
+            return {"kp": 0.0, "ki": 0.0, "kd": 0.0}
+        kp, ki, kd = self._pid.get_tuning()
+        return {"kp": kp, "ki": ki, "kd": kd}
 
     # ── Pot polling ──────────────────────────────────────────────────────────
 

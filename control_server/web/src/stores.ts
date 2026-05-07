@@ -127,6 +127,7 @@ export const createPidStore = (wsService: WebSocketService) => {
     'L-A': 0,
   });
   const [running, setRunning] = createSignal(false);
+  const [tuning, setTuning] = createStore({ kp: 1.0, ki: 0.0, kd: 0.0 });
 
   wsService.updateConfig({
     onPidStateUpdate: (isRunning) => {
@@ -142,11 +143,17 @@ export const createPidStore = (wsService: WebSocketService) => {
     onPidTargetUpdate: (jointName, value) => {
       setTargets(jointName, value);
     },
+    onPidTuningUpdate: (values) => {
+      setTuning('kp', values.kp);
+      setTuning('ki', values.ki);
+      setTuning('kd', values.kd);
+    },
   });
 
   return {
     isRunning: running,
     getTargets: () => targets,
+    getTuning: () => tuning,
     start: () => {
       wsService.sendPidStart();
       setRunning(true);
@@ -159,6 +166,12 @@ export const createPidStore = (wsService: WebSocketService) => {
       const clamped = Math.max(-1, Math.min(1, value));
       setTargets(jointName, clamped);
       wsService.sendPidTarget(jointName, clamped);
+    },
+    setTuning: (kp: number, ki: number, kd: number) => {
+      setTuning('kp', kp);
+      setTuning('ki', ki);
+      setTuning('kd', kd);
+      wsService.sendPidTune(kp, ki, kd);
     },
   };
 };

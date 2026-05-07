@@ -2,6 +2,7 @@ import { Component, For, onCleanup } from 'solid-js';
 import { JointType, ROBOT_JOINTS, createMotionStore, createPidStore } from '../stores';
 import { SliderCard } from '../components/SliderCard';
 import { Graph } from '../components/Graph';
+import { NumericDrag } from '../components/NumericDrag';
 
 interface JointPidControlTabProps {
   motion: ReturnType<typeof createMotionStore>;
@@ -16,10 +17,6 @@ export const JointPidControlTab: Component<JointPidControlTabProps> = (props) =>
   return (
     <div>
       <div class="pid-toolbar">
-        <div>
-          <div class="pid-title">JOINT PID CONTROL</div>
-          <div class="pid-subtitle">Use the sliders to set each joint demand.</div>
-        </div>
         <div class="pid-actions">
           <button class={`btn ${props.pid.isRunning() ? 'active' : ''}`} onClick={() => props.pid.start()}>
             START PID
@@ -27,6 +24,46 @@ export const JointPidControlTab: Component<JointPidControlTabProps> = (props) =>
           <button class="btn-emergency" onClick={() => props.pid.stop()}>
             STOP PID
           </button>
+        </div>
+      </div>
+
+      <div style={{ padding: '12px 18px', display: 'none' }}>
+        <div style={{ display: 'grid', gap: '8px' }}>
+          <div style={{ display: 'flex', 'justify-content': 'space-between', 'align-items': 'center' }}>
+            <div style={{ 'font-size': '12px', color: 'var(--text-dim)' }}>Kp</div>
+            <div style={{ width: '70%' }}>
+              <NumericDrag
+                value={props.pid.getTuning().kp}
+                onChange={(v) => props.pid.setTuning(v, props.pid.getTuning().ki, props.pid.getTuning().kd)}
+                min={0}
+                step={0.001}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', 'justify-content': 'space-between', 'align-items': 'center' }}>
+            <div style={{ 'font-size': '12px', color: 'var(--text-dim)' }}>Ki</div>
+            <div style={{ width: '70%' }}>
+              <NumericDrag
+                value={props.pid.getTuning().ki}
+                onChange={(v) => props.pid.setTuning(props.pid.getTuning().kp, v, props.pid.getTuning().kd)}
+                min={0}
+                step={0.0001}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', 'justify-content': 'space-between', 'align-items': 'center' }}>
+            <div style={{ 'font-size': '12px', color: 'var(--text-dim)' }}>Kd</div>
+            <div style={{ width: '70%' }}>
+              <NumericDrag
+                value={props.pid.getTuning().kd}
+                onChange={(v) => props.pid.setTuning(props.pid.getTuning().kp, props.pid.getTuning().ki, v)}
+                min={0}
+                step={0.0001}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -72,18 +109,6 @@ export const JointPidControlTab: Component<JointPidControlTabProps> = (props) =>
           justify-content: space-between;
           gap: 16px;
           padding: 16px 18px 0;
-        }
-        .pid-title {
-          font-size: 12px;
-          letter-spacing: 0.2em;
-          color: var(--text);
-          font-weight: bold;
-        }
-        .pid-subtitle {
-          margin-top: 6px;
-          font-size: 11px;
-          color: var(--text-dim);
-          letter-spacing: 0.08em;
         }
         .pid-actions {
           display: flex;

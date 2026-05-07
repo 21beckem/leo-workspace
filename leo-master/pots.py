@@ -1,12 +1,3 @@
-"""
-pots.py — ADS1115 potentiometer reading for LEO
-Knows nothing about the network, motors, or anything else.
-
-Wiring:
-  ADS1115 #1  ADDR → GND  →  address 0x48  →  joints 1–4 (channels A0–A3)
-  ADS1115 #2  ADDR → VDD  →  address 0x49  →  joints 5–8 (channels A0–A3)
-"""
-
 import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 
@@ -20,15 +11,15 @@ class Pots:
         ads2 = ADS.ADS1115(i2c, address=0x49)
 
         
-        self._offsets: list[float] = [
-            0.13428,  # joint 1  |  Right Hip
-            0.10498,  # joint 2  |  Right Upper-leg
-            0.33442,  # joint 3  |  Right Lower-leg
-            0.04059,  # joint 4  |  Right Ankle
-            0.25929,  # joint 5  |  Left Hip
-            0.62648,  # joint 6  |  Left Upper-leg
-            0.08405,  # joint 7  |  Left Lower-leg
-            0.46409,  # joint 8  |  Left Ankle
+        self._offsets: list[dict[str, float]] = [
+            { 'plus': 0.13878, 'gain': 1 },  # joint 1  |  Right Hip
+            { 'plus': 0.10498, 'gain': 1 },  # joint 2  |  Right Upper-leg
+            { 'plus': 0.33442, 'gain': 1 },  # joint 3  |  Right Lower-leg
+            { 'plus': 0.04059, 'gain':-1 },  # joint 4  |  Right Ankle
+            { 'plus': 0.25929, 'gain': 1 },  # joint 5  |  Left Hip
+            { 'plus': 0.62648, 'gain': 1 },  # joint 6  |  Left Upper-leg
+            { 'plus': 0.08405, 'gain': 1 },  # joint 7  |  Left Lower-leg
+            { 'plus': 0.46409, 'gain': 1 },  # joint 8  |  Left Ankle
         ]
 
         self._channels: list[AnalogIn] = [
@@ -48,7 +39,7 @@ class Pots:
         Index 0 = joint 1, index 7 = joint 8.
         """
         return [
-            max(0.0, min(1.0, ch.value / _MAX_RAW)) - self._offsets[i]
+            (max(0.0, min(1.0, ch.value / _MAX_RAW)) - self._offsets[i]['plus']) * self._offsets[i]['gain']
             for i, ch in enumerate(self._channels)
         ]
 
@@ -62,5 +53,5 @@ class Pots:
         Raises IndexError for out-of-range joints.
         """
         if not 0 <= joint < JOINT_COUNT:
-            raise IndexError("Joint index out of range")
-        return max(0.0, min(1.0, self._channels[joint].value / _MAX_RAW)) - self._offsets[joint]
+            raise IndexError('Joint index out of range')
+        return (max(0.0, min(1.0, self._channels[joint].value / _MAX_RAW)) - self._offsets[joint]['plus']) * self._offsets[joint]['gain']

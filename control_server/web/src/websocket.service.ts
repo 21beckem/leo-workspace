@@ -7,6 +7,7 @@ export interface WebSocketServiceConfig {
   onPidStateUpdate?: (running: boolean) => void;
   onPidTargetsUpdate?: (values: PidTargets) => void;
   onPidTargetUpdate?: (joint: JointName, value: number) => void;
+  onPidTuningUpdate?: (values: { kp: number; ki: number; kd: number }) => void;
   onMotorSend?: (motor: MotorName, value: number) => void;
   onError?: (message: string) => void;
 }
@@ -44,7 +45,7 @@ export class WebSocketService {
 
     this.ws.onopen = () => {
       this.config.onStateChange('connected');
-      this.config.onStatusChange(`Connected — ${host}:${port}`);
+      this.config.onStatusChange('Connected');
     };
 
     this.ws.onclose = () => {
@@ -74,6 +75,8 @@ export class WebSocketService {
           this.config.onPidTargetsUpdate?.(d.values as PidTargets);
         } else if (d.type === 'pid_target') {
           this.config.onPidTargetUpdate?.(d.joint as JointName, Number(d.value));
+        } else if (d.type === 'pid_tuning') {
+          this.config.onPidTuningUpdate?.(d.values as { kp: number; ki: number; kd: number });
         }
       } catch {}
     };
@@ -147,6 +150,11 @@ export class WebSocketService {
     }
   }
 
+  sendPidTune(kp: number, ki: number, kd: number): void {
+    if (!this.isConnected()) return;
+    this.sendMessage({ type: 'pid_tune', kp, ki, kd });
+  }
+
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
   }
@@ -158,3 +166,4 @@ export class WebSocketService {
     }
   }
 }
+ 
