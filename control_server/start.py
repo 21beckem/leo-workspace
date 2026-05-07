@@ -50,6 +50,28 @@ async def _broadcast_pots() -> None:
         await asyncio.sleep(interval)
 
 
+async def _broadcast_json(payload: dict[str, object]) -> None:
+    if not _clients:
+        return
+
+    msg = json.dumps(payload)
+    dead = set()
+    for ws in _clients:
+        try:
+            await ws.send_str(msg)
+        except Exception:
+            dead.add(ws)
+    _clients.difference_update(dead)
+
+
+async def _broadcast_pid_state() -> None:
+    await _broadcast_json({"type": "pid_state", "running": leo.pid_running})
+
+
+async def _broadcast_pid_targets() -> None:
+    await _broadcast_json({"type": "pid_targets", "values": leo.get_pid_targets()})
+
+
 # ── WebSocket handler ─────────────────────────────────────────────────────────
 async def ws_handler(request: web.Request) -> web.WebSocketResponse:
     ws = web.WebSocketResponse(heartbeat=3.0)
@@ -59,6 +81,9 @@ async def ws_handler(request: web.Request) -> web.WebSocketResponse:
     _clients.add(ws)
     log.info("Client connected    [%s]  (total: %d)", peer, len(_clients))
 
+    await ws.send_str(json.dumps({"type": "pid_state", "running": leo.pid_running}))
+    await ws.send_str(json.dumps({"type": "pid_targets", "values": leo.get_pid_targets()}))
+
     try:
         async for msg in ws:
             if msg.type == WSMsgType.TEXT:
@@ -66,6 +91,7 @@ async def ws_handler(request: web.Request) -> web.WebSocketResponse:
             elif msg.type == WSMsgType.ERROR:
                 log.error("WS error from %s: %s", peer, ws.exception())
     finally:
+        leo.stop_pid()
         _clients.discard(ws)
         leo.stop_all()
         log.info("Client disconnected [%s] — all motors stopped  (total: %d)", peer, len(_clients))
@@ -95,7 +121,33 @@ def _dispatch(raw: str, peer: str) -> None:
             return
         leo.set_motor(motor, value)
 
+    elif kind == "pid_start":
+        leo.start_pid()
+        asyncio.create_task(_broadcast_pid_state())
+
+    elif kind == "pid_stop":
+        leo.stop_pid()
+        asyncio.create_task(_broadcast_pid_state())
+        asyncio.create_task(_broadcast_pid_targets())
+
+    elif kind == "pid_target":
+        joint = str(data.get("joint", ""))
+        try:
+            value = float(data["value"])
+        except (KeyError, TypeError, ValueError) as exc:
+            log.warning("Bad PID target from %s: %s", peer, exc)
+            return
+
+        try:
+            leo.set_pid_target(joint, value)
+        except KeyError:
+            log.warning("Unknown PID joint %r from %s", joint, peer)
+            return
+
+        asyncio.create_task(_broadcast_json({"type": "pid_target", "joint": joint, "value": leo.get_pid_targets()[joint]}))
+
     elif kind == "stop_all":
+        leo.stop_pid()
         leo.stop_all()
         log.info("STOP ALL ← %s", peer)
 

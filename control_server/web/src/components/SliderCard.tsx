@@ -1,4 +1,4 @@
-import { Component, createSignal, Show } from 'solid-js';
+import { Component, createEffect, createSignal, Show } from 'solid-js';
 import { MotorSlider } from './MotorSlider';
 
 interface SliderCardProps {
@@ -6,11 +6,18 @@ interface SliderCardProps {
   name: string;
   onChange: (value: number) => void;
   onStop: () => void;
+  value?: () => number;
   background?: Component;
 }
 
 export const SliderCard: Component<SliderCardProps> = (props) => {
   const [value, setValue] = createSignal(0);
+  createEffect(() => {
+    if (props.value) {
+      setValue(props.value());
+    }
+  });
+
   const getCardClass = () => {
     const v = value();
     const base = 'control-card';

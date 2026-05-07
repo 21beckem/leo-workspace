@@ -3,6 +3,7 @@ import Chart from 'chart.js/auto';
 
 interface GraphProps {
   sample: number;
+	demand?: number;
   maxPoints?: number;
 }
 
@@ -18,6 +19,7 @@ export const Graph: Component<GraphProps> = (props) => {
 			myChart = undefined;
 		}
 		if (!myGraphCanvasEl) return console.error('Graph canvas not found');
+		const hasDemandDataset = props.demand !== undefined;
 
 		const config: any = {
 			type: 'line',
@@ -25,11 +27,27 @@ export const Graph: Component<GraphProps> = (props) => {
 				labels: [],
 				datasets: [
 					{
-						label: 'Pot value',
-							data: [],
-							pointRadius: 0,
-							pointHoverRadius: 0
-					}
+						label: 'Live value',
+						data: [],
+						borderColor: '#36A2EB',
+						backgroundColor: '#36A2EB',
+						pointRadius: 0,
+						pointHoverRadius: 0,
+						borderWidth: 2,
+						tension: 0.18,
+						fill: false,
+					},
+					...(hasDemandDataset ? [{
+						label: 'Demand',
+						data: [],
+						borderColor: '#FF9F40',
+						backgroundColor: '#FF9F40',
+						pointRadius: 0,
+						pointHoverRadius: 0,
+						borderWidth: 2,
+						tension: 0.18,
+						fill: false,
+					}] : [])
 				]
 			},
 			options: {
@@ -46,8 +64,8 @@ export const Graph: Component<GraphProps> = (props) => {
 						}
 					},
 					y: {
-						min: -0.1,
-						max: 0.1
+						min: -1.1,
+						max: 1.1
 					}
 				}
 			}
@@ -60,11 +78,17 @@ export const Graph: Component<GraphProps> = (props) => {
 
 			const dataset = myChart.data.datasets[0];
 			dataset.data.push(props.sample);
+			if (hasDemandDataset && myChart.data.datasets[1]) {
+				myChart.data.datasets[1].data.push(props.demand ?? props.sample);
+			}
 			myChart.data.labels?.push(String(pointIndex));
 			pointIndex += 1;
 
 			while (dataset.data.length > getMaxPoints()) {
 				dataset.data.shift();
+				if (hasDemandDataset && myChart.data.datasets[1]) {
+					myChart.data.datasets[1].data.shift();
+				}
 				myChart.data.labels?.shift();
 			}
 

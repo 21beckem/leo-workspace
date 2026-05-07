@@ -1,9 +1,10 @@
 import { Component, For } from 'solid-js';
-import { MOTOR_NAMES, createMotionStore } from '../stores';
+import { MOTOR_NAMES, createMotionStore, createPidStore } from '../stores';
 import { SliderCard } from '../components/SliderCard';
 
 interface MotorControlTabProps {
   motion: ReturnType<typeof createMotionStore>;
+  pid?: ReturnType<typeof createPidStore>;
 }
 
 export const MotorControlTab: Component<MotorControlTabProps> = (props) => {

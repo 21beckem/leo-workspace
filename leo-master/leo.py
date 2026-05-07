@@ -13,12 +13,24 @@ import busio
 
 from motors import Motors
 from pots   import Pots
+from pid import JointConfig, Pid
 
 from power_off_pi import power_off_pi
 
 log = logging.getLogger(__name__)
 
 POT_POLL_HZ = 20  # how often to read the potentiometers
+
+PID_JOINTS: tuple[JointConfig, ...] = (
+    JointConfig("R-H", ("G", "H"), opposite_directions=True),
+    JointConfig("R-U", ("G", "H"), opposite_directions=False),
+    JointConfig("R-L", ("E", "F"), opposite_directions=False),
+    JointConfig("R-A", ("E", "F"), opposite_directions=True),
+    JointConfig("L-H", ("C", "D"), opposite_directions=True),
+    JointConfig("L-U", ("C", "D"), opposite_directions=False),
+    JointConfig("L-L", ("A", "B"), opposite_directions=False),
+    JointConfig("L-A", ("A", "B"), opposite_directions=True),
+)
 
 
 class LEO:
@@ -34,6 +46,11 @@ class LEO:
 
         self._motors = Motors(self._i2c)
         self._pots   = Pots(self._i2c)
+        self._pid = Pid(
+            PID_JOINTS,
+            self._read_joint_value,
+            self.set_motor,
+        )
 
         # Live pot state — updated continuously by the polling loop.
         # Each entry is a normalised float in [0.0, 1.0].
@@ -48,7 +65,7 @@ class LEO:
             "L-L", # Left Lower-leg
             "L-A", # Left Ankle
         ]
-        self.pot_values: dict[str, int] = {
+        self.pot_values: dict[str, float] = {
             self.pot_names[0]: 0.0, # Right Hip
             self.pot_names[1]: 0.0, # Right Upper-leg
             self.pot_names[2]: 0.0, # Right Lower-leg
@@ -61,7 +78,7 @@ class LEO:
 
         self._poll_task: asyncio.Task | None = None
 
-        atexit.register(self._motors.stop_all)
+        atexit.register(self._shutdown)
 
         existingInstance = self
 
@@ -85,6 +102,40 @@ class LEO:
         if not self.destroyed:
             self._motors.stop_all()
             log.info("All motors stopped")
+
+    # ── PID API ──────────────────────────────────────────────────────────────
+
+    @property
+    def pid_running(self) -> bool:
+        if self.destroyed:
+            return False
+        return self._pid.running
+
+    def start_pid(self) -> None:
+        if not self.destroyed:
+            self._pid.start()
+
+    def stop_pid(self) -> None:
+        if not self.destroyed:
+            self._pid.stop()
+
+    def set_pid_target(self, joint: str, value: float) -> None:
+        if not self.destroyed:
+            self._pid.set_target(joint, value)
+
+    def set_pid_targets(self, targets: dict[str, float]) -> None:
+        if not self.destroyed:
+            self._pid.set_targets(targets)
+
+    def get_pid_targets(self) -> dict[str, float]:
+        if self.destroyed:
+            return {}
+        return self._pid.get_targets()
+
+    def pid_snapshot(self) -> dict[str, object]:
+        if self.destroyed:
+            return {"running": False, "targets": {}}
+        return self._pid.snapshot()
 
     # ── Pot polling ──────────────────────────────────────────────────────────
 
@@ -120,11 +171,20 @@ class LEO:
                 log.warning("Pot read error: %s", exc)
             await asyncio.sleep(interval)
 
+    def _read_joint_value(self, joint: str) -> float:
+        return self.pot_values[joint]
+
     # ── System ───────────────────────────────────────────────────────────────
+
+    def _shutdown(self) -> None:
+        self.stop_pid()
+        self.stop_polling()
+        self.stop_all()
 
     def power_off(self) -> None:
         """Stop all motors, then shut the Pi down."""
         if not self.destroyed:
+            self.stop_pid()
             self.stop_all()
             self.stop_polling()
             log.info("Powering off")

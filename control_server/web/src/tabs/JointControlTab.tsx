@@ -1,10 +1,11 @@
 import { Component, For } from 'solid-js';
-import { ROBOT_JOINTS, JointType, createMotionStore } from '../stores';
+import { ROBOT_JOINTS, JointType, createMotionStore, createPidStore } from '../stores';
 import { SliderCard } from '../components/SliderCard';
 import { Graph } from '../components/Graph';
 
 interface JointControlTabProps {
   motion: ReturnType<typeof createMotionStore>;
+  pid?: ReturnType<typeof createPidStore>;
 }
 
 export const JointControlTab: Component<JointControlTabProps> = (props) => {

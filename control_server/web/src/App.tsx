@@ -3,13 +3,15 @@ import { Dynamic } from "solid-js/web";
 import {
   createConnectionStore,
   createThemeStore,
-  createMotionStore
+  createMotionStore,
+  createPidStore,
 } from './stores';
 import { WebSocketService } from './websocket.service';
 import { Header } from './components/Header';
 import { ConnectionBar } from './components/ConnectionBar';
 import { MotorControlTab } from './tabs/MotorControlTab';
 import { JointControlTab } from './tabs/JointControlTab';
+import { JointPidControlTab } from './tabs/JointPidControlTab';
 import { TabsBar, initTabs } from './components/TabsBar';
 import './styles.css';
 
@@ -29,6 +31,11 @@ export const WINDOW_TABS: WindowTab[] = [
     key: 'joint',
     name: 'Joint Control',
     Renderer: JointControlTab
+  },
+  {
+    key: 'pid',
+    name: 'Joint PID Control',
+    Renderer: JointPidControlTab
   }
 ];
 
@@ -53,6 +60,7 @@ const App: Component = () => {
     }
   });
   const motion = createMotionStore(wsService);
+  const pid = createPidStore(wsService);
 
   // Handle power off with confirmation
   const handlePowerOff = () => {
@@ -125,6 +133,7 @@ const App: Component = () => {
             WINDOW_TABS.find(tab => tab.key === currentTab())?.Renderer || (() => <div>Invalid tab</div>)
           }
           motion={motion}
+          pid={pid}
         />
       </Show>
     </>

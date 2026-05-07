@@ -64,6 +64,7 @@ export const ROBOT_JOINTS: [Joint, Joint, Joint, Joint, Joint, Joint, Joint, Joi
 export type MotorName = typeof MOTOR_NAMES[number];
 export type JointName = typeof JOINT_NAMES[number];
 export type ConnectionState = '' | 'connecting' | 'connected';
+export type PidTargets = Record<JointName, number>;
 
 // Motor store: fine-grained reactive motor state
 export interface Motor {
@@ -112,6 +113,54 @@ export const createMotionStore = (wsService: WebSocketService) => {
     },
     getPots: () => pots,
   }
+};
+
+export const createPidStore = (wsService: WebSocketService) => {
+  const [targets, setTargets] = createStore<PidTargets>({
+    'R-H': 0,
+    'R-U': 0,
+    'R-L': 0,
+    'R-A': 0,
+    'L-H': 0,
+    'L-U': 0,
+    'L-L': 0,
+    'L-A': 0,
+  });
+  const [running, setRunning] = createSignal(false);
+
+  wsService.updateConfig({
+    onPidStateUpdate: (isRunning) => {
+      setRunning(isRunning);
+    },
+    onPidTargetsUpdate: (values) => {
+      Object.entries(values).forEach(([jointName, value]) => {
+        if (jointName in targets) {
+          setTargets(jointName as JointName, value);
+        }
+      });
+    },
+    onPidTargetUpdate: (jointName, value) => {
+      setTargets(jointName, value);
+    },
+  });
+
+  return {
+    isRunning: running,
+    getTargets: () => targets,
+    start: () => {
+      wsService.sendPidStart();
+      setRunning(true);
+    },
+    stop: () => {
+      wsService.sendPidStop();
+      setRunning(false);
+    },
+    setTarget: (jointName: JointName, value: number) => {
+      const clamped = Math.max(-1, Math.min(1, value));
+      setTargets(jointName, clamped);
+      wsService.sendPidTarget(jointName, clamped);
+    },
+  };
 };
 
 // Connection store

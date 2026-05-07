@@ -1,9 +1,12 @@
-import { ConnectionState, MotorName, type Pots } from './stores';
+import { ConnectionState, JointName, MotorName, type PidTargets, type Pots } from './stores';
 
 export interface WebSocketServiceConfig {
   onStateChange: (state: ConnectionState) => void;
   onStatusChange: (status: string) => void;
   onPotsUpdate?: (values: Pots) => void;
+  onPidStateUpdate?: (running: boolean) => void;
+  onPidTargetsUpdate?: (values: PidTargets) => void;
+  onPidTargetUpdate?: (joint: JointName, value: number) => void;
   onMotorSend?: (motor: MotorName, value: number) => void;
   onError?: (message: string) => void;
 }
@@ -47,6 +50,7 @@ export class WebSocketService {
     this.ws.onclose = () => {
       this.config.onStateChange('');
       this.config.onStatusChange('Disconnected');
+      this.config.onPidStateUpdate?.(false);
       this.ws = null;
       this.clearThrottleTimer();
     };
@@ -64,6 +68,12 @@ export class WebSocketService {
           this.config.onError?.(d.message);
         } else if (d.type === 'pots') {
           this.config.onPotsUpdate?.(d.values as Pots);
+        } else if (d.type === 'pid_state') {
+          this.config.onPidStateUpdate?.(Boolean(d.running));
+        } else if (d.type === 'pid_targets') {
+          this.config.onPidTargetsUpdate?.(d.values as PidTargets);
+        } else if (d.type === 'pid_target') {
+          this.config.onPidTargetUpdate?.(d.joint as JointName, Number(d.value));
         }
       } catch {}
     };
@@ -75,6 +85,7 @@ export class WebSocketService {
       this.ws.close();
       this.ws = null;
     }
+    this.config.onPidStateUpdate?.(false);
     this.clearThrottleTimer();
     this.config.onStateChange('');
     this.config.onStatusChange('Disconnected');
@@ -113,6 +124,21 @@ export class WebSocketService {
   sendPowerOff(): void {
     if (!this.isConnected()) return;
     this.sendMessage({ type: 'poweroff' });
+  }
+
+  sendPidStart(): void {
+    if (!this.isConnected()) return;
+    this.sendMessage({ type: 'pid_start' });
+  }
+
+  sendPidStop(): void {
+    if (!this.isConnected()) return;
+    this.sendMessage({ type: 'pid_stop' });
+  }
+
+  sendPidTarget(joint: JointName, value: number): void {
+    if (!this.isConnected()) return;
+    this.sendMessage({ type: 'pid_target', joint, value });
   }
 
   private sendMessage(obj: any): void {
